@@ -1,4 +1,4 @@
-package com.example.qrapp
+package com.qrgenie.app
 
 import android.content.Context
 import android.graphics.Bitmap

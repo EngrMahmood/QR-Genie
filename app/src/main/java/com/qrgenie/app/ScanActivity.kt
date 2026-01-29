@@ -1,8 +1,7 @@
-package com.example.qrapp
+package com.qrgenie.app
 
 import android.Manifest
 import android.content.Intent
-import android.graphics.Bitmap
 import android.os.Bundle
 import android.provider.MediaStore
 import android.widget.Toast
@@ -24,7 +23,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
-import com.example.qrapp.ui.theme.QRAppTheme
+import com.qrgenie.app.ui.theme.QRAppTheme
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope

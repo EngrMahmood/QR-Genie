@@ -1,7 +1,7 @@
-package com.example.qrapp
-
+package com.qrgenie.app
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -16,9 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.qrapp.ui.theme.QRAppTheme
+import com.qrgenie.app.ui.theme.QRAppTheme
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
+
+
 
 class GenerateActivity : ComponentActivity() {
 
@@ -130,7 +132,7 @@ fun generateQRCodeBitmap(text: String, size: Int = 500): Bitmap {
     val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
     for (x in 0 until size) {
         for (y in 0 until size) {
-            bmp.setPixel(x, y, if (bitMatrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+            bmp.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
         }
     }
     return bmp

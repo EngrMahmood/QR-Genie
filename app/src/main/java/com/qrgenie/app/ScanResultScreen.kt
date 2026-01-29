@@ -1,4 +1,4 @@
-package com.example.qrapp
+package com.qrgenie.app
 
 import android.content.Intent
 import android.os.Bundle
@@ -13,8 +13,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
-import com.example.qrapp.ui.theme.QRAppTheme
+import com.qrgenie.app.ui.theme.QRAppTheme
+
 
 class ScanResultActivity : ComponentActivity() {
 
@@ -72,7 +74,7 @@ fun ScanResultScreen(qrText: String) {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Button(
                     onClick = {
-                        clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(qrText))
+                        clipboardManager.setText(AnnotatedString(qrText))
                         Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)

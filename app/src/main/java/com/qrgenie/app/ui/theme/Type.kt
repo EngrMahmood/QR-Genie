@@ -1,4 +1,4 @@
-package com.example.qrapp.ui.theme
+package com.qrgenie.app.ui.theme
 
 import androidx.compose.material3.Typography
 
