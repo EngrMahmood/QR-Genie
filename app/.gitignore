@@ -1,1 +1,3 @@
 /build
+# Ignore all release build outputs
+**/release/

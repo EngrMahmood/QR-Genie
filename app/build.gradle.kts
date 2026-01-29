@@ -12,8 +12,8 @@ android {
         applicationId = "com.qrgenie.app"
         minSdk = 23
         targetSdk = 36
-        versionCode = 1 // increment this for updates
-        versionName = "1.0"
+        versionCode = 2 // increment this for updates
+        versionName = "1.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
