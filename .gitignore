@@ -13,6 +13,7 @@
 bin/
 gen/
 out/
+**/Play consol
 
 # Gradle files
 .gradle/
