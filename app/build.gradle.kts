@@ -84,6 +84,11 @@ dependencies {
     // Kotlin coroutines for .await()
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 
+    dependencies {
+        // Add this line
+        implementation("androidx.compose.material:material-icons-extended:1.7.0")
+    }
+
 }
 
 
