@@ -21,7 +21,7 @@ import com.qrgenie.app.ui.theme.QRAppTheme
 class ScanResultActivity : ComponentActivity() {
 
     companion object {
-        const val EXTRA_QR_CONTENT = "extra_qr_content"
+        const val EXTRA_QR_CONTENT = "EXTRA_QR_CONTENT"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

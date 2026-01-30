@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.qrgenie.app"
-        minSdk = 23
+        minSdk = 26
         targetSdk = 36
         versionCode = 2 // increment this for updates
         versionName = "1.0.1"
