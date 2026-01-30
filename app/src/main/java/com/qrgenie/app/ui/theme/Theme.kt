@@ -7,6 +7,8 @@ import androidx.compose.runtime.Composable
 private val LightColors = lightColorScheme(
     primary = Primary,
     onPrimary = OnPrimary,
+    primaryContainer = PrimaryContainer,
+    onPrimaryContainer = OnPrimaryContainer,
     secondary = Secondary,
     onSecondary = OnSecondary,
     background = Background,
@@ -16,9 +18,7 @@ private val LightColors = lightColorScheme(
 )
 
 @Composable
-fun QRAppTheme(
-    content: @Composable () -> Unit
-) {
+fun QRAppTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = LightColors,
         typography = Typography,
