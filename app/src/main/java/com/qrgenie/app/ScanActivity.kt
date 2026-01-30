@@ -17,8 +17,16 @@ import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.FlashOff
+import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.FlipCameraAndroid
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,7 +37,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.google.android.gms.tasks.Tasks
@@ -162,31 +172,85 @@ fun CameraScanScreen(executor: ExecutorService, onQRCodeDetected: (String) -> Un
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Scan QR Code") }) }
+        topBar = {
+            // Modern Floating Blue Header (Matches Home Screen)
+            Surface(
+                modifier = Modifier.fillMaxWidth().statusBarsPadding(),
+                color = MaterialTheme.colorScheme.primary, // Brand Blue
+                tonalElevation = 8.dp,
+                shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { (context as? ComponentActivity)?.finish() }) {
+                        Icon(androidx.compose.material.icons.Icons.Default.ArrowBack, "Back", tint = Color.White)
+                    }
+                    Text(
+                        "SCAN MAGIC QR",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Black,
+                            color = Color.White,
+                            letterSpacing = 1.5.sp
+                        )
+                    )
+                }
+            }
+        }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            // Camera Viewport
             AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
 
-            // The Visual Overlay
+            // The Visual Overlay (Animated)
             ScannerOverlay()
 
-            // Buttons at the bottom
-            Row(
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 48.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            // MODERN FLOATING CONTROLS
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 40.dp, start = 24.dp, end = 24.dp),
+                color = Color.Black.copy(alpha = 0.6f), // Glassmorphism
+                shape = RoundedCornerShape(32.dp),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
             ) {
-                Button(onClick = { lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK }) {
-                    Text("Switch")
-                }
-                // Flash Button
-                Button(onClick = {
-                    isFlashOn = !isFlashOn
-                    camera?.cameraControl?.enableTorch(isFlashOn)
-                }) {
-                    Text(if (isFlashOn) "Flash Off" else "Flash On")
-                }
-                Button(onClick = { galleryLauncher.launch("image/*") }) {
-                    Text("Gallery")
+                Row(
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(24.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Flash Toggle
+                    IconButton(onClick = {
+                        isFlashOn = !isFlashOn
+                        camera?.cameraControl?.enableTorch(isFlashOn)
+                    }) {
+                        Icon(
+                            imageVector = if (isFlashOn) androidx.compose.material.icons.Icons.Default.FlashOn
+                            else androidx.compose.material.icons.Icons.Default.FlashOff,
+                            contentDescription = "Flash",
+                            tint = if (isFlashOn) Color.Yellow else Color.White
+                        )
+                    }
+
+                    // Gallery Launcher
+                    Button(
+                        onClick = { galleryLauncher.launch("image/*") },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Icon(androidx.compose.material.icons.Icons.Default.PhotoLibrary, null, tint = Color.Black)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Gallery", color = Color.Black, fontWeight = FontWeight.Bold)
+                    }
+
+                    // Flip Camera
+                    IconButton(onClick = {
+                        lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK)
+                            CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK
+                    }) {
+                        Icon(androidx.compose.material.icons.Icons.Default.FlipCameraAndroid, null, tint = Color.White)
+                    }
                 }
             }
         }
@@ -226,7 +290,7 @@ fun ScannerOverlay() {
         // 2. Draw Animated Red Line
         val currentLineY = top + (rectSize * lineOffset)
         drawLine(
-            color = Color.Red,
+            color = Color(0xFF2962FF),
             start = Offset(left + 10.dp.toPx(), currentLineY),
             end = Offset(left + rectSize - 10.dp.toPx(), currentLineY),
             strokeWidth = 2.dp.toPx()
