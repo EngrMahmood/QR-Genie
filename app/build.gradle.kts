@@ -22,12 +22,16 @@ android {
 
     buildTypes {
         release {
-            // Use an existing signing config if present (CI or local). Do NOT create a new
-            // SigningConfig here because some Gradle environments/plugins may already create
-            // a 'release' SigningConfig earlier which would cause a duplicate-name error.
-            // The signing config (create/configure) is handled below in the dedicated
-            // signingConfigs section so we only reference it here.
-            signingConfig = signingConfigs.findByName("release")
+            // Only attach a signing config if a keystore actually exists (either via
+            // KEYSTORE_FILE env var or the default keystore.jks in project root).
+            // This lets us build an unsigned bundle locally when the keystore is not
+            // present (useful for diagnostics and CI-free checks). The signing config
+            // itself is created/configured later in this file when possible.
+            val envKs = System.getenv("KEYSTORE_FILE")
+            val ksExists = (envKs != null && file(envKs).exists()) || rootProject.file("keystore.jks").exists()
+            if (ksExists) {
+                signingConfig = signingConfigs.findByName("release")
+            }
             // Populate signing properties from environment variables if present (used by CI)
             // These will be read by the signing config created above.
             // Note: CI will write the keystore file and set KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD env vars.
@@ -108,7 +112,7 @@ dependencies {
     implementation("com.google.zxing:core:3.5.4")
 
 // QR scanning
-    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+    implementation("com.google.mlkit:barcode-scanning:17.4.0")
 
 // CameraX
     implementation("androidx.camera:camera-core:1.3.0")
