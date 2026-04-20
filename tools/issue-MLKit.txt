@@ -1,0 +1,25 @@
+Title: Play Console: native libs in com.google.android.gms:play-services-mlkit-barcode-scanning:17.3.0 not 16KB aligned (libbarhopper_v3.so p_align=0x1000)
+
+Body:
+Hello ML Kit team,
+
+We use com.google.android.gms:play-services-mlkit-barcode-scanning:17.3.0 in our app. The Play Console flagged a recommendation:
+"Recompile your app with 16 KB native library alignment" for our release bundle.
+
+Investigation:
+- Offending native file(s) (inside the AAB): base/lib/<ABI>/libbarhopper_v3.so
+- Local AAR found at: C:\Users\SMART COM\.gradle\caches\modules-2\files-2.1\com.google.mlkit\barcode-scanning\17.3.0\b65c206f33542482530605592cc2513a876b44c4\barcode-scanning-17.3.0.aar
+- Our alignment checker output (attached as alignment_check.txt) shows p_align includes 0x1000 (4096) for the above .so.
+
+Expected:
+- Native libraries packaged in the AAR should have p_align = 0x4000 (16384) so they meet Play Console requirements.
+
+Attached:
+- vendor-diagnostics.zip (contains the AAR, the extracted .so files and alignment_check.txt)
+- Steps to reproduce included in README.txt inside the bundle.
+
+Please publish an updated AAR with the native libraries aligned to 16 KB (p_align=0x4000) or advise if we should take any other remediation steps.
+
+Thanks,
+<your name / team>
+

@@ -1,0 +1,21 @@
+Title: Play Console: native libs in androidx.camera:camera-core:1.3.0 not 16KB aligned (libimage_processing_util_jni.so p_align=0x1000)
+
+Body:
+Hi CameraX team,
+
+We use androidx.camera:camera-core:1.3.0 in our app. Play Console recommends "Recompile your app with 16 KB native library alignment".
+
+Investigation:
+- Offending native file(s): base/lib/<ABI>/libimage_processing_util_jni.so
+- Local AAR: C:\Users\SMART COM\.gradle\caches\modules-2\files-2.1\androidx.camera\camera-core\1.3.0\bfa334a7fd0bb8ba4942c18c68fb7a20473ffcfd\camera-core-1.3.0.aar
+- alignment_check.txt included (attached) shows p_align includes 0x1000 for those .so files.
+
+Request:
+- Please publish a rebuild of the AAR with the native libraries having p_align set to 0x4000 (16384). This should clear Play Console’s recommendation.
+
+Attached:
+- vendor-diagnostics.zip (AARs, extracted .so files, alignment_check.txt and README)
+
+Thanks,
+<your name / team>
+
