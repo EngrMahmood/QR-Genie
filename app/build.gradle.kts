@@ -123,6 +123,10 @@ dependencies {
     // Kotlin coroutines for .await()
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 
+    // Provide Guava (ListenableFuture) which some ML Kit / Play services native
+    // artifacts may reference. Use Android variant to reduce size impact.
+    implementation("com.google.guava:guava:31.1-android")
+
         // Add this line
         implementation("androidx.compose.material:material-icons-extended:1.7.0")
 
