@@ -4,7 +4,7 @@ package com.qrgenie.app
 
 import android.Manifest
 import android.content.Intent
-import android.graphics.Bitmap
+// ...existing code...
 import android.os.Bundle
 import android.provider.MediaStore
 import android.widget.Toast
@@ -21,12 +21,14 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.FlipCameraAndroid
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.ui.draw.alpha
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -41,12 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
-import com.google.android.gms.tasks.Tasks
-import com.google.mlkit.vision.barcode.BarcodeScannerOptions
-import com.google.mlkit.vision.barcode.BarcodeScanning
-import com.google.mlkit.vision.barcode.common.Barcode
-import com.google.mlkit.vision.common.InputImage
+// ...existing code...
 import com.qrgenie.app.ui.theme.QRAppTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -66,7 +63,7 @@ class ScanActivity : ComponentActivity() {
 
         val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (!granted) {
-                Toast.makeText(this, "Camera permission required", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.camera_permission_required), Toast.LENGTH_SHORT).show()
                 finish()
             }
         }
@@ -85,6 +82,8 @@ class ScanActivity : ComponentActivity() {
         }
     }
 
+    // ...existing code...
+
     override fun onDestroy() {
         super.onDestroy()
         cameraExecutor.shutdown()
@@ -100,14 +99,19 @@ fun CameraScanScreen(executor: ExecutorService, onQRCodeDetected: (String) -> Un
     val coroutineScope = rememberCoroutineScope()
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
 
-    // For Vibration
+    // For Vibration (use Class-based getSystemService to avoid deprecated constant)
     val vibrator = remember {
-        context.getSystemService(android.content.Context.VIBRATOR_SERVICE) as android.os.Vibrator
+        context.getSystemService(android.os.Vibrator::class.java)
     }
 
     var camera by remember { mutableStateOf<Camera?>(null) }
     var lensFacing by remember { mutableStateOf(CameraSelector.LENS_FACING_BACK) }
     var isScanning by remember { mutableStateOf(true) }
+    // Simple debounce to avoid duplicate detections within short window
+    var lastDetectedTime by remember { mutableStateOf(0L) }
+    // Hold a pending detected result so we can show a short confirmation before navigating
+    var pendingResult by remember { mutableStateOf<String?>(null) }
+    var showConfirmation by remember { mutableStateOf(false) }
     var isFlashOn by remember { mutableStateOf(false) } // Flash State
 
     val previewView = remember {
@@ -125,7 +129,7 @@ fun CameraScanScreen(executor: ExecutorService, onQRCodeDetected: (String) -> Un
                 }
                 val result = QRCodeUtils.scanQRCodeFromBitmap(bitmap)
                 if (result != null) onQRCodeDetected(result)
-                else Toast.makeText(context, "No QR found", Toast.LENGTH_SHORT).show()
+                else Toast.makeText(context, context.getString(R.string.no_qr_found), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -141,19 +145,34 @@ fun CameraScanScreen(executor: ExecutorService, onQRCodeDetected: (String) -> Un
 
         val analysis = ImageAnalysis.Builder()
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-            .setTargetResolution(android.util.Size(1280, 720)) // Improved detection
+            // Set default resolution (leave to system) - removed deprecated setTargetResolution
             .build()
             .also {
                 it.setAnalyzer(executor) { imageProxy ->
-                    if (isScanning) {
-                        QRCodeUtils.scanImageProxy(imageProxy) { result ->
-                            isScanning = false
-                            // Vibrate for 100ms
-                            vibrator.vibrate(android.os.VibrationEffect.createOneShot(100, 10))
-                            coroutineScope.launch(Dispatchers.Main) { onQRCodeDetected(result) }
+                    val now = System.currentTimeMillis()
+                    // Respect scanning flag and debounce window (1s)
+                    if (isScanning && now - lastDetectedTime > 1000L) {
+                        try {
+                            QRCodeUtils.scanImageProxy(imageProxy) { result ->
+                                if (result != null) {
+                                    lastDetectedTime = System.currentTimeMillis()
+                                    isScanning = false
+                                    pendingResult = result
+                                    showConfirmation = true
+                                    // Vibrate for 100ms (best-effort)
+                                    try {
+                                        vibrator?.vibrate(android.os.VibrationEffect.createOneShot(100, 10))
+                                    } catch (_: Exception) {
+                                    }
+                                }
+                            }
+                        } catch (e: Exception) {
+                            // Ensure imageProxy is closed on unexpected errors
+                            try { imageProxy.close() } catch (_: Exception) { }
                         }
                     } else {
-                        imageProxy.close()
+                        // Not scanning or within debounce window
+                        try { imageProxy.close() } catch (_: Exception) { }
                     }
                 }
             }
@@ -185,7 +204,7 @@ fun CameraScanScreen(executor: ExecutorService, onQRCodeDetected: (String) -> Un
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = { (context as? ComponentActivity)?.finish() }) {
-                        Icon(androidx.compose.material.icons.Icons.Default.ArrowBack, "Back", tint = Color.White)
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                     Text(
                         "SCAN MAGIC QR",
@@ -205,6 +224,11 @@ fun CameraScanScreen(executor: ExecutorService, onQRCodeDetected: (String) -> Un
 
             // The Visual Overlay (Animated)
             ScannerOverlay()
+
+            // Confirmation overlay when a QR is detected
+            if (showConfirmation) {
+                ConfirmationOverlay()
+            }
 
             // MODERN FLOATING CONTROLS
             Surface(
@@ -226,8 +250,8 @@ fun CameraScanScreen(executor: ExecutorService, onQRCodeDetected: (String) -> Un
                         camera?.cameraControl?.enableTorch(isFlashOn)
                     }) {
                         Icon(
-                            imageVector = if (isFlashOn) androidx.compose.material.icons.Icons.Default.FlashOn
-                            else androidx.compose.material.icons.Icons.Default.FlashOff,
+                            imageVector = if (isFlashOn) Icons.Filled.FlashOn
+                            else Icons.Filled.FlashOff,
                             contentDescription = "Flash",
                             tint = if (isFlashOn) Color.Yellow else Color.White
                         )
@@ -239,7 +263,7 @@ fun CameraScanScreen(executor: ExecutorService, onQRCodeDetected: (String) -> Un
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Icon(androidx.compose.material.icons.Icons.Default.PhotoLibrary, null, tint = Color.Black)
+                        Icon(Icons.Filled.PhotoLibrary, null, tint = Color.Black)
                         Spacer(Modifier.width(8.dp))
                         Text("Gallery", color = Color.Black, fontWeight = FontWeight.Bold)
                     }
@@ -249,7 +273,7 @@ fun CameraScanScreen(executor: ExecutorService, onQRCodeDetected: (String) -> Un
                         lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK)
                             CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK
                     }) {
-                        Icon(androidx.compose.material.icons.Icons.Default.FlipCameraAndroid, null, tint = Color.White)
+                        Icon(Icons.Filled.FlipCameraAndroid, null, tint = Color.White)
                     }
                 }
             }
@@ -297,3 +321,27 @@ fun ScannerOverlay() {
         )
     }
 }
+
+@Composable
+fun ConfirmationOverlay() {
+    // A simple centered green check that fades out automatically
+    val alpha = remember { androidx.compose.animation.core.Animatable(1f) }
+    LaunchedEffect(Unit) {
+        // Let it show briefly then fade
+        kotlinx.coroutines.delay(650)
+        alpha.animateTo(0f, animationSpec = tween(300))
+    }
+
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF2E7D32).copy(alpha = 0.95f)),
+            modifier = Modifier.size(140.dp).alpha(alpha.value)
+        ) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                    Icon(Icons.Filled.CheckCircle, contentDescription = "Scanned", tint = Color.White, modifier = Modifier.size(64.dp))
+                }
+        }
+    }
+}
+

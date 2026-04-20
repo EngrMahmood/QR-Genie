@@ -1,11 +1,14 @@
 package com.qrgenie.app
 
+import android.app.Activity
+// ...existing code...
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+// ...existing code...
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -23,24 +26,61 @@ import androidx.compose.ui.graphics.Color // Added missing import
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.android.play.core.appupdate.AppUpdateManager
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.install.InstallStateUpdatedListener
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.InstallStatus
+import com.google.android.play.core.install.model.UpdateAvailability
 import com.qrgenie.app.ui.theme.OnSecondary
 import com.qrgenie.app.ui.theme.QRAppTheme
 import com.qrgenie.app.ui.theme.Secondary
+import com.google.firebase.messaging.FirebaseMessaging
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.IntentSenderRequest
 
 class MainActivity : ComponentActivity() {
+    private lateinit var appUpdateManager: AppUpdateManager
+    // keep a reference so we can unregister the listener
+    private var installStateListener: InstallStateUpdatedListener? = null
+    // Activity Result launcher for Play Core intent sender (migrates away from onActivityResult)
+    private lateinit var updateLauncher: ActivityResultLauncher<IntentSenderRequest>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Initialize Update Manager and check for updates
+        appUpdateManager = AppUpdateManagerFactory.create(this)
+        checkForUpdates()
+
+        // Subscribe to release notifications topic (optional - requires Firebase setup)
+        try {
+            FirebaseMessaging.getInstance().subscribeToTopic("releases")
+        } catch (ignored: Exception) {}
+
+        // Register ActivityResult launcher for the in-app update IntentSender flow.
+        // This is the modern Activity Result API replacement for onActivityResult.
+        updateLauncher = registerForActivityResult(
+            ActivityResultContracts.StartIntentSenderForResult()
+        ) { result ->
+            if (result.resultCode != Activity.RESULT_OK) {
+                // Update flow was cancelled or failed; inform user (non-blocking)
+                Toast.makeText(this, "Update was cancelled.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         setContent {
             QRAppTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-
                     HomeScreen(
                         onScan = { startActivity(Intent(this, ScanActivity::class.java)) },
                         onGenerate = { startActivity(Intent(this, GenerateActivity::class.java)) }
@@ -50,10 +90,73 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun checkForUpdates() {
+        val appUpdateInfoTask = appUpdateManager.appUpdateInfo
+
+        // Listener to handle the "Downloaded" state for Flexible updates
+        val listener = InstallStateUpdatedListener { state ->
+            if (state.installStatus() == InstallStatus.DOWNLOADED) {
+                // Once downloaded, notify the user to restart
+                Toast.makeText(
+                    this,
+                    "Update downloaded! Restarting to install...",
+                    Toast.LENGTH_LONG
+                ).show()
+                appUpdateManager.completeUpdate()
+            }
+        }
+        // keep reference for lifecycle cleanup
+        installStateListener = listener
+
+        appUpdateInfoTask.addOnSuccessListener { appUpdateInfo ->
+            if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+                && appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)
+            ) {
+                appUpdateManager.registerListener(listener)
+                try {
+                    @Suppress("DEPRECATION")
+                    appUpdateManager.startUpdateFlowForResult(
+                        appUpdateInfo,
+                        AppUpdateType.FLEXIBLE,
+                        this,
+                        1001
+                    )
+                } catch (_: Exception) {
+                }
+            }
+        }
+    }
+
+
+
+
+    // Crucial: Check if an update download finished while the app was in background
+    @Suppress("DEPRECATION")
+    override fun onResume() {
+        super.onResume()
+        appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
+            if (info.installStatus() == InstallStatus.DOWNLOADED) {
+                appUpdateManager.completeUpdate()
+            }
+        }
+    }
+
+    // Migrated to Activity Result API; no onActivityResult override needed anymore.
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Unregister the listener to avoid leaks
+        try {
+            installStateListener?.let { appUpdateManager.unregisterListener(it) }
+        } catch (ignored: Exception) {
+        }
+    }
+}
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun HomeScreen(onScan: () -> Unit, onGenerate: () -> Unit) {
         val context = LocalContext.current
+        val shareChooserTitle = stringResource(R.string.share_chooser_title)
 
         // Version fetch logic
         val appVersion = remember(context) {
@@ -137,13 +240,13 @@ class MainActivity : ComponentActivity() {
             Download it here: https://play.google.com/store/apps/details?id=${context.packageName}
         """.trimIndent()
 
-                                val sendIntent = Intent().apply {
+                                                val sendIntent = Intent().apply {
                                     action = Intent.ACTION_SEND
                                     putExtra(Intent.EXTRA_TEXT, shareMessage)
                                     type = "text/plain"
                                 }
-                                val shareIntent = Intent.createChooser(sendIntent, "Share QR Genie via")
-                                context.startActivity(shareIntent)
+                                                val shareIntent = Intent.createChooser(sendIntent, shareChooserTitle)
+                                                context.startActivity(shareIntent)
                             },
                             shape = CircleShape,
                             color = Color.White.copy(alpha = 0.15f),
@@ -268,4 +371,3 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-}

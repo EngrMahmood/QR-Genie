@@ -12,20 +12,55 @@ android {
         applicationId = "com.qrgenie.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3 // increment this for updates
-        versionName = "1.0.2"
+        // NOTE: Play Console rejected upload because versionCode 5 was already used.
+        // Bump versionCode when publishing new bundles and update versionName accordingly.
+        versionCode = 6 // bumped for Play release
+        versionName = "1.0.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // Use an existing signing config if present (CI or local). Do NOT create a new
+            // SigningConfig here because some Gradle environments/plugins may already create
+            // a 'release' SigningConfig earlier which would cause a duplicate-name error.
+            // The signing config (create/configure) is handled below in the dedicated
+            // signingConfigs section so we only reference it here.
+            signingConfig = signingConfigs.findByName("release")
+            // Populate signing properties from environment variables if present (used by CI)
+            // These will be read by the signing config created above.
+            // Note: CI will write the keystore file and set KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD env vars.
+            // We configure the signingConfig below in the 'signingConfigs' block.
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
+    }
+
+    // Signing config: if environment variables are set (CI), use them; otherwise the build will continue unsigned.
+    // Avoid creating the 'release' SigningConfig twice (some environments/plugins may pre-create it).
+    val ksPath = System.getenv("KEYSTORE_FILE") ?: rootProject.file("keystore.jks").path
+    val ksPassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+    val ksAlias = System.getenv("KEY_ALIAS") ?: ""
+    val ksKeyPassword = System.getenv("KEY_PASSWORD") ?: ""
+
+    val existingReleaseConfig = signingConfigs.findByName("release")
+    if (existingReleaseConfig == null) {
+        signingConfigs.create("release") {
+            storeFile = file(ksPath)
+            storePassword = ksPassword
+            keyAlias = ksAlias
+            keyPassword = ksKeyPassword
+        }
+    } else {
+        // Configure existing release signing config with environment-provided values (safe no-op if empty)
+        existingReleaseConfig.storeFile = file(ksPath)
+        existingReleaseConfig.storePassword = ksPassword
+        existingReleaseConfig.keyAlias = ksAlias
+        existingReleaseConfig.keyPassword = ksKeyPassword
     }
 
     compileOptions {
@@ -84,11 +119,18 @@ dependencies {
     // Kotlin coroutines for .await()
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 
-    dependencies {
         // Add this line
         implementation("androidx.compose.material:material-icons-extended:1.7.0")
+
+    // Auto Update
+        implementation("com.google.android.play:app-update:2.1.0")
+        implementation("com.google.android.play:app-update-ktx:2.1.0")
+
+    // Firebase Cloud Messaging (optional - requires google-services.json and Firebase setup)
+    implementation("com.google.firebase:firebase-messaging:23.2.0")
     }
 
-}
+
+
 
 

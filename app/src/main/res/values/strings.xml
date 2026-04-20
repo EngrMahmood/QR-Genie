@@ -1,3 +1,19 @@
 <resources>
     <string name="app_name">QR Genie</string>
+
+    <!-- UI / Toasts -->
+    <string name="camera_permission_required">Camera permission required</string>
+    <string name="no_qr_found">No QR found</string>
+    <string name="please_enter_some_text">Please enter some text</string>
+    <string name="share_chooser_title">Share QR Genie via</string>
+    <string name="invalid_link">Invalid link</string>
+    <string name="gallery_label">Gallery</string>
+    <string name="copy_label">Copy</string>
+    <string name="share_label">Share</string>
+    <string name="generate_button_text">Generate Magic QR</string>
+    <string name="share_image_text">Share QR Code</string>
+    <string name="open_magic_link">Open Magic Link</string>
+    <string name="copied_to_clipboard">Copied to clipboard!</string>
+    <string name="scan_again">Scan again</string>
+
 </resources>

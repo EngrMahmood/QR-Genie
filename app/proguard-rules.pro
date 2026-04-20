@@ -19,3 +19,10 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Keep rules for libraries used (ML Kit, Play Core, ZXing, CameraX, Firebase)
+-keep class com.google.mlkit.** { *; }
+-keep class com.google.android.gms.** { *; }
+-keep class com.google.zxing.** { *; }
+-keep class androidx.camera.** { *; }
+-keep class com.google.firebase.messaging.** { *; }

@@ -20,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.core.net.toUri
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -49,7 +51,18 @@ class ScanResultActivity : ComponentActivity() {
 fun ScanResultScreen(qrText: String) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
-    val isUrl = qrText.startsWith("http") || qrText.startsWith("https")
+    val isUrl = try {
+        val uri = qrText.toUri()
+        val scheme = uri.scheme?.lowercase()
+        scheme == "http" || scheme == "https"
+    } catch (e: Exception) {
+        false
+    }
+    val invalidLinkStr = stringResource(R.string.invalid_link)
+    val copyLabel = stringResource(R.string.copy_label)
+    val shareLabel = stringResource(R.string.share_label)
+    val openMagicLabel = stringResource(R.string.open_magic_link)
+    val copiedToast = stringResource(R.string.copied_to_clipboard)
     val scrollState = rememberScrollState()
 
     Scaffold(
@@ -65,7 +78,7 @@ fun ScanResultScreen(qrText: String) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = { (context as? ComponentActivity)?.finish() }) {
-                        Icon(Icons.Default.ArrowBack, "Back", tint = Color.White)
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                     Text(
                         "SCAN RESULT",
@@ -91,12 +104,12 @@ fun ScanResultScreen(qrText: String) {
         ) {
             Spacer(modifier = Modifier.height(20.dp))
 
-            Icon(
-                imageVector = if (isUrl) Icons.Default.Language else Icons.Default.TextSnippet,
-                contentDescription = null,
-                modifier = Modifier.size(80.dp),
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
-            )
+                    Icon(
+                        imageVector = if (isUrl) Icons.Filled.Language else Icons.Filled.TextSnippet,
+                        contentDescription = if (isUrl) stringResource(R.string.open_magic_link) else stringResource(R.string.copy_label),
+                        modifier = Modifier.size(80.dp),
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                    )
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -134,15 +147,15 @@ fun ScanResultScreen(qrText: String) {
                 Button(
                     onClick = {
                         clipboardManager.setText(AnnotatedString(qrText))
-                        Toast.makeText(context, "Copied to clipboard!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, copiedToast, Toast.LENGTH_SHORT).show()
                     },
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                 ) {
-                    Icon(Icons.Default.ContentCopy, null)
+                    Icon(Icons.Filled.ContentCopy, contentDescription = copyLabel)
                     Spacer(Modifier.width(8.dp))
-                    Text("Copy")
+                    Text(copyLabel)
                 }
 
                 OutlinedButton(
@@ -151,37 +164,61 @@ fun ScanResultScreen(qrText: String) {
                             type = "text/plain"
                             putExtra(Intent.EXTRA_TEXT, qrText)
                         }
-                        context.startActivity(Intent.createChooser(intent, "Share Result"))
+                        context.startActivity(Intent.createChooser(intent, shareLabel))
                     },
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
                 ) {
-                    Icon(Icons.Default.Share, null)
+                    Icon(Icons.Filled.Share, contentDescription = shareLabel)
                     Spacer(Modifier.width(8.dp))
-                    Text("Share")
+                    Text(shareLabel)
                 }
             }
 
             if (isUrl) {
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(
+                    Button(
                     onClick = {
                         try {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(qrText))
-                            context.startActivity(intent)
-                        } catch (e: Exception) {
-                            Toast.makeText(context, "Invalid Link", Toast.LENGTH_SHORT).show()
+                            val uri = qrText.toUri()
+                            val scheme = uri.scheme?.lowercase()
+                            if (scheme == "http" || scheme == "https") {
+                                val intent = Intent(Intent.ACTION_VIEW, uri)
+                                context.startActivity(intent)
+                            } else {
+                                Toast.makeText(context, invalidLinkStr, Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (_: Exception) {
+                            Toast.makeText(context, invalidLinkStr, Toast.LENGTH_SHORT).show()
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)) // Forest Green
                 ) {
-                    Icon(Icons.Default.OpenInNew, null)
+                    Icon(Icons.Filled.OpenInNew, contentDescription = openMagicLabel)
                     Spacer(Modifier.width(8.dp))
-                    Text("Open Magic Link")
+                    Text(openMagicLabel)
                 }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            // Offer quick 'Scan Again' so user doesn't have to navigate from home
+                Button(
+                onClick = {
+                    // Relaunch ScanActivity
+                    val intent = Intent(context, ScanActivity::class.java)
+                    context.startActivity(intent)
+                    if (context is ComponentActivity) context.finish()
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+            ) {
+                    Icon(Icons.Filled.QrCodeScanner, contentDescription = stringResource(R.string.scan_again))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.scan_again))
             }
 
             Spacer(modifier = Modifier.height(20.dp))

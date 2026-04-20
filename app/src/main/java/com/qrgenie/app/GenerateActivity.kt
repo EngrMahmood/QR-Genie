@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -112,11 +113,11 @@ fun GenerateScreen() {
             // Generate Button
             Button(
                 onClick = {
-                    if (text.isNotBlank()) {
-                        qrBitmap = generateQRCodeBitmap(text)
-                    } else {
-                        Toast.makeText(context, "Please enter some text", Toast.LENGTH_SHORT).show()
-                    }
+                            if (text.isNotBlank()) {
+                                qrBitmap = generateQRCodeBitmap(text)
+                            } else {
+                                Toast.makeText(context, context.getString(R.string.please_enter_some_text), Toast.LENGTH_SHORT).show()
+                            }
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),
@@ -149,6 +150,7 @@ fun GenerateScreen() {
                 Spacer(modifier = Modifier.height(32.dp))
 
                 // Share Button
+                val shareImageText = stringResource(R.string.share_image_text)
                 Button(
                     onClick = {
                         val uri = QRCodeUtils.saveBitmapToCacheAndGetUri(context, bitmap)
@@ -159,7 +161,7 @@ fun GenerateScreen() {
                                 putExtra(Intent.EXTRA_STREAM, uri)
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             }
-                            context.startActivity(Intent.createChooser(shareIntent, "Share QR Code"))
+                            context.startActivity(Intent.createChooser(shareIntent, shareImageText))
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -167,9 +169,9 @@ fun GenerateScreen() {
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)),
                     border = BorderStroke(2.dp, MaterialTheme.colorScheme.secondary)
                 ) {
-                    Icon(Icons.Default.Share, null, tint = MaterialTheme.colorScheme.secondary)
+                    Icon(Icons.Default.Share, contentDescription = shareImageText, tint = MaterialTheme.colorScheme.secondary)
                     Spacer(Modifier.width(8.dp))
-                    Text("Share Image", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
+                    Text(shareImageText, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
                 }
             }
         }
