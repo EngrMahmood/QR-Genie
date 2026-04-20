@@ -111,8 +111,8 @@ dependencies {
     // QR generation
     implementation("com.google.zxing:core:3.5.4")
 
-// QR scanning
-    implementation("com.google.mlkit:barcode-scanning:17.4.0")
+// QR scanning (use Play Services ML Kit artifact which is available in cache)
+    implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
 
 // CameraX
     implementation("androidx.camera:camera-core:1.6.0")
