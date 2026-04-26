@@ -115,10 +115,10 @@ dependencies {
     implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
 
 // CameraX (test additional versions to find a build with 16KB-aligned native libs)
-    implementation("androidx.camera:camera-core:1.6.0")
-    implementation("androidx.camera:camera-camera2:1.6.0")
-    implementation("androidx.camera:camera-lifecycle:1.6.0")
-    implementation("androidx.camera:camera-view:1.6.0")
+    implementation("androidx.camera:camera-core:1.6.1")
+    implementation("androidx.camera:camera-camera2:1.6.1")
+    implementation("androidx.camera:camera-lifecycle:1.6.1")
+    implementation("androidx.camera:camera-view:1.6.1")
 
     // Kotlin coroutines for .await()
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
