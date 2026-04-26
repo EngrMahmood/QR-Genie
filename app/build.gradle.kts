@@ -111,8 +111,8 @@ dependencies {
     // QR generation
     implementation("com.google.zxing:core:3.5.4")
 
-    // QR scanning (try newer Play Services ML Kit to check 16KB alignment)
-    implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.4.0")
+    // QR scanning (use Play Services ML Kit)
+    implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
 
 // CameraX (try a newer non-breaking minor version to fetch rebuilt native libs)
     implementation("androidx.camera:camera-core:1.5.2")
