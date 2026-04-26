@@ -114,7 +114,7 @@ dependencies {
     // QR scanning (use Play Services ML Kit). Also try direct ML Kit artifact versions to test native libs.
     implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
     // Try direct ML Kit versions (fallback) to see if different ML Kit releases include fixed native libs
-    implementation("com.google.mlkit:barcode-scanning:17.4.0")
+    implementation("com.google.mlkit:barcode-scanning:17.3.1")
 
 // CameraX (test additional versions to find a build with 16KB-aligned native libs)
     implementation("androidx.camera:camera-core:1.7.0")
