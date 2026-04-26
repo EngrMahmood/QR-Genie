@@ -111,14 +111,14 @@ dependencies {
     // QR generation
     implementation("com.google.zxing:core:3.5.4")
 
-// QR scanning (use Play Services ML Kit artifact which is available in cache)
-    implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
+    // QR scanning (try newer Play Services ML Kit to check 16KB alignment)
+    implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.4.0")
 
-// CameraX
-    implementation("androidx.camera:camera-core:1.3.0")
-    implementation("androidx.camera:camera-camera2:1.3.0")
-    implementation("androidx.camera:camera-lifecycle:1.3.0")
-    implementation("androidx.camera:camera-view:1.3.0")
+// CameraX (try a newer non-breaking minor version to fetch rebuilt native libs)
+    implementation("androidx.camera:camera-core:1.5.2")
+    implementation("androidx.camera:camera-camera2:1.5.2")
+    implementation("androidx.camera:camera-lifecycle:1.5.2")
+    implementation("androidx.camera:camera-view:1.5.2")
 
     // Kotlin coroutines for .await()
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
