@@ -14,8 +14,9 @@ android {
         targetSdk = 36
         // NOTE: Play Console rejected upload because versionCode 5 was already used.
         // Bump versionCode when publishing new bundles and update versionName accordingly.
-        versionCode = 6 // bumped for Play release
-        versionName = "1.0.4"
+        // Incremented for next Play release
+        versionCode = 7 // bumped for Play release
+        versionName = "1.0.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -83,6 +84,25 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.6.0"
     }
+    // Ensure we can add a small native shim and exclude offending vendor .so files
+    externalNativeBuild {
+        cmake {
+            path = file("CMakeLists.txt")
+        }
+    }
+
+    // Exclude known mis-aligned vendor native libraries so we can ship them from assets
+    // and provide a shim in lib/ that loads them at runtime. Use jniLibs.excludes (non-deprecated API).
+    // Use glob patterns that are compatible with the Android Gradle Plugin incremental packager.
+    packaging {
+        jniLibs {
+            // Use recursive globbing to match any ABI folder (e.g. arm64-v8a, armeabi-v7a)
+            excludes += listOf(
+                "**/libimage_processing_util_jni.so",
+                "**/libbarhopper_v3.so"
+            )
+        }
+    }
 }
 
 dependencies {
@@ -114,13 +134,15 @@ dependencies {
     // QR scanning (use Play Services ML Kit). Also try direct ML Kit artifact versions to test native libs.
     implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
     // Try direct ML Kit versions (fallback) to see if different ML Kit releases include fixed native libs
-    implementation("com.google.mlkit:barcode-scanning:17.3.1")
+    // Removed direct ML Kit artifact because the specific version wasn't available from configured repositories
+    // Use Play Services ML Kit artifact above (play-services-mlkit-barcode-scanning:18.3.1) which is published.
 
 // CameraX (test additional versions to find a build with 16KB-aligned native libs)
-    implementation("androidx.camera:camera-core:1.7.0")
-    implementation("androidx.camera:camera-camera2:1.7.0")
-    implementation("androidx.camera:camera-lifecycle:1.7.0")
-    implementation("androidx.camera:camera-view:1.7.0")
+    // Use CameraX 1.6.0 which is available in the configured repositories and matches bundled test artifacts
+    implementation("androidx.camera:camera-core:1.6.0")
+    implementation("androidx.camera:camera-camera2:1.6.0")
+    implementation("androidx.camera:camera-lifecycle:1.6.0")
+    implementation("androidx.camera:camera-view:1.6.0")
 
     // Kotlin coroutines for .await()
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
@@ -139,6 +161,26 @@ dependencies {
     // Firebase Cloud Messaging (optional - requires google-services.json and Firebase setup)
     implementation("com.google.firebase:firebase-messaging:23.2.0")
     }
+
+// Prepare native assets (copy offending .so from Gradle cache into app assets) before build
+tasks.register("prepareNativeAssets") {
+    doLast {
+        try {
+            exec {
+                // Run the helper script in tools/ to locate the vendor .so files in the Gradle cache
+                // and copy them into app/src/main/assets/native/<abi>/
+                commandLine("python", "${project.rootDir.path.replace('\\','/')}/tools/move_native_to_assets.py", project.projectDir.path)
+            }
+        } catch (e: Exception) {
+            logger.warn("prepareNativeAssets failed: ${'$'}e")
+        }
+    }
+}
+
+// Ensure native assets are prepared before packaging
+tasks.named("preBuild").configure {
+    dependsOn("prepareNativeAssets")
+}
 
 
 
