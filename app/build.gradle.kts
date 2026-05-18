@@ -15,8 +15,8 @@ android {
         // NOTE: Play Console rejected upload because versionCode 5 was already used.
         // Bump versionCode when publishing new bundles and update versionName accordingly.
         // Incremented for next Play release
-        versionCode = 7 // bumped for Play release
-        versionName = "1.0.5"
+        versionCode = 8 // bumped for Play release (auto-bump)
+        versionName = "1.0.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
