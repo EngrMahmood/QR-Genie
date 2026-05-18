@@ -38,3 +38,13 @@ captures/
 # Misc
 .DS_Store
 *.log
+
+# Extracted bundles and temporary app artifacts
+app/aab-extract/
+app/aab-extract-patched/
+app/tmp-*/
+
+# Keystore and signing artifacts
+*.jks
+*.keystore
+

@@ -8,10 +8,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -21,6 +19,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,11 +30,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.qrgenie.app.data.ScanHistoryRepository
 import com.qrgenie.app.ui.theme.QRAppTheme
 import com.google.zxing.BarcodeFormat
+import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 
-class GenerateActivity : ComponentActivity() {
+class GenerateActivity : LocalizedComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -49,7 +51,7 @@ class GenerateActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GenerateScreen() {
-    var text by remember { mutableStateOf("") }
+    var text by rememberSaveable { mutableStateOf("") }
     var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -71,11 +73,11 @@ fun GenerateScreen() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = { (context as? ComponentActivity)?.finish() }) {
-                        Icon(Icons.Default.ArrowBack, "Back", tint = Color.White)
+                        Icon(Icons.Default.ArrowBack, stringResource(R.string.back_label), tint = Color.White)
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "GENERATE QR",
+                        text = stringResource(R.string.generate_button_text),
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Black,
                             color = Color.White,
@@ -95,12 +97,14 @@ fun GenerateScreen() {
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(modifier = Modifier.height(20.dp))
+
             // Input Field
 
             OutlinedTextField(
                 value = text,
                 onValueChange = { text = it },
-                label = { Text("Enter text or link") },
+                label = { Text(stringResource(R.string.enter_text_or_link)) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 // Updated color reference for Material 3
@@ -121,7 +125,7 @@ fun GenerateScreen() {
                                 // save generated content into history (non-blocking)
                                 try {
                                     coroutineScope.launch {
-                                        try { com.qrgenie.app.data.ScanHistoryRepository.insert(context, text, "generated") } catch (_: Exception) {}
+                                        try { ScanHistoryRepository.insert(context, text, "generated") } catch (_: Exception) {}
                                     }
                                 } catch (_: Exception) {}
                             } else {
@@ -134,7 +138,7 @@ fun GenerateScreen() {
             ) {
                 Icon(Icons.Default.AutoAwesome, null)
                 Spacer(Modifier.width(8.dp))
-                Text("Generate Magic QR", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.generate_button_text), fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(40.dp))
@@ -150,7 +154,7 @@ fun GenerateScreen() {
                     Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
                         Image(
                             bitmap = bitmap.asImageBitmap(),
-                            contentDescription = "QR Code",
+                            contentDescription = stringResource(R.string.qr_code_preview),
                             modifier = Modifier.fillMaxSize()
                         )
                     }
@@ -189,7 +193,12 @@ fun GenerateScreen() {
 
 fun generateQRCodeBitmap(text: String, size: Int = 512): Bitmap {
     val writer = QRCodeWriter()
-    val bitMatrix = writer.encode(text, BarcodeFormat.QR_CODE, size, size)
+    // Ensure QR encodes text using UTF-8 so languages like Urdu/Arabic and other special characters are preserved
+    val hints = mapOf(
+        EncodeHintType.CHARACTER_SET to "UTF-8",
+        EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.M
+    )
+    val bitMatrix = writer.encode(text, BarcodeFormat.QR_CODE, size, size, hints)
     val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
     for (x in 0 until size) {
         for (y in 0 until size) {

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="camera_permission_required">Kamera izni gerekli</string>
+    <string name="no_qr_found">QR bulunamadi</string>
+    <string name="please_enter_some_text">Lutfen bir metin girin</string>
+    <string name="share_chooser_title">QR Genie ile paylas</string>
+    <string name="update_cancelled">Guncelleme iptal edildi.</string>
+    <string name="update_downloaded_restart">Guncelleme indirildi! Kurulum icin yeniden baslatiliyor...</string>
+    <string name="invalid_link">Gecersiz baglanti</string>
+    <string name="gallery_label">Galeri</string>
+    <string name="copy_label">Kopyala</string>
+    <string name="share_label">Paylas</string>
+    <string name="history_label">Gecmis</string>
+    <string name="language_label">Dil</string>
+    <string name="generate_button_text">Sihirli QR Olustur</string>
+    <string name="enter_text_or_link">Metin veya baglanti girin</string>
+    <string name="language_english">Ingilizce</string>
+    <string name="language_urdu">Urduca</string>
+    <string name="language_arabic">Arapca</string>
+    <string name="language_hindi">Hintce</string>
+    <string name="home_tagline">Sihirli hiz</string>
+    <string name="home_assistant_title">QR Asistaniniz</string>
+    <string name="home_assistant_subtitle">Kodlari aninda tarayin veya olusturun.</string>
+    <string name="home_scan_title">QR Kodu Tara</string>
+    <string name="home_scan_subtitle">Yonelt ve aninda yakala</string>
+    <string name="home_generate_title">QR Olustur</string>
+    <string name="home_generate_subtitle">Saniyeler icinde ozel kodlar olusturun</string>
+    <string name="home_share_message">QR Genie\'yi deneyin!\n\nQR islemleri icin en hizli yol.\nBuradan indirin: https://play.google.com/store/apps/details?id=%1$s</string>
+    <string name="qr_code_preview">QR kod onizlemesi</string>
+    <string name="share_image_text">QR kodu paylas</string>
+    <string name="open_magic_link">Sihirli baglantiyi ac</string>
+    <string name="copied_to_clipboard">Panoya kopyalandi!</string>
+    <string name="scan_again">Tekrar tara</string>
+    <string name="scanned_label">Tarandi</string>
+    <string name="scan_magic_qr">SIHIRLI QR TARA</string>
+    <string name="scan_result_title">TARAMA SONUCU</string>
+    <string name="decoded_content_label">COZUMLENEN ICERIK</string>
+    <string name="flash_label">Flaş</string>
+    <string name="back_label">Geri</string>
+    <string name="clear_all">Tumunu temizle</string>
+    <string name="no_history_yet">Henuz gecmis yok</string>
+    <string name="clear_history_title">Gecmisi temizle</string>
+    <string name="clear_history_message">Bu islem tum gecmisi kalici olarak silecek. Emin misiniz?</string>
+    <string name="history_cleared">Gecmis temizlendi</string>
+    <string name="undo">Geri al</string>
+    <string name="clear">Temizle</string>
+    <string name="cancel">Iptal</string>
+    <string name="open">Ac</string>
+    <string name="delete">Sil</string>
+    <string name="source_generated">Olusturuldu</string>
+    <string name="source_scanned">Tarandi</string>
+</resources>
+

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="camera_permission_required">اجازه دوربین لازم است</string>
+    <string name="no_qr_found">هیچ QR پیدا نشد</string>
+    <string name="please_enter_some_text">لطفا متنی وارد کنید</string>
+    <string name="share_chooser_title">اشتراک گذاری QR Genie از طریق</string>
+    <string name="update_cancelled">به روزرسانی لغو شد.</string>
+    <string name="update_downloaded_restart">به روزرسانی دانلود شد! در حال راه اندازی مجدد برای نصب...</string>
+    <string name="invalid_link">لینک نامعتبر</string>
+    <string name="gallery_label">گالری</string>
+    <string name="copy_label">کپی</string>
+    <string name="share_label">اشتراک گذاری</string>
+    <string name="history_label">تاریخچه</string>
+    <string name="language_label">زبان</string>
+    <string name="generate_button_text">ساخت QR جادویی</string>
+    <string name="enter_text_or_link">متن یا لینک وارد کنید</string>
+    <string name="language_english">انگلیسی</string>
+    <string name="language_urdu">اردو</string>
+    <string name="language_arabic">عربی</string>
+    <string name="language_hindi">هندی</string>
+    <string name="home_tagline">جادویی سریع</string>
+    <string name="home_assistant_title">دستیار QR شما</string>
+    <string name="home_assistant_subtitle">کدها را فورا اسکن یا تولید کنید.</string>
+    <string name="home_scan_title">اسکن کد QR</string>
+    <string name="home_scan_subtitle">نشانه بگیرید و فورا ثبت کنید</string>
+    <string name="home_generate_title">تولید QR</string>
+    <string name="home_generate_subtitle">در چند ثانیه کد سفارشی بسازید</string>
+    <string name="home_share_message">QR Genie را ببینید!\n\nسریع ترین راه برای کار با QR ها.\nاز اینجا دانلود کنید: https://play.google.com/store/apps/details?id=%1$s</string>
+    <string name="qr_code_preview">پیش نمایش کد QR</string>
+    <string name="share_image_text">اشتراک گذاری کد QR</string>
+    <string name="open_magic_link">باز کردن لینک جادویی</string>
+    <string name="copied_to_clipboard">در کلیپ بورد کپی شد!</string>
+    <string name="scan_again">اسکن دوباره</string>
+    <string name="scanned_label">اسکن شد</string>
+    <string name="scan_magic_qr">اسکن QR جادویی</string>
+    <string name="scan_result_title">نتیجه اسکن</string>
+    <string name="decoded_content_label">محتوای رمزگشایی شده</string>
+    <string name="flash_label">فلش</string>
+    <string name="back_label">بازگشت</string>
+    <string name="clear_all">پاک کردن همه</string>
+    <string name="no_history_yet">هنوز تاریخچه ای وجود ندارد</string>
+    <string name="clear_history_title">پاک کردن تاریخچه</string>
+    <string name="clear_history_message">این کار همه تاریخچه را برای همیشه حذف می کند. مطمئن هستید؟</string>
+    <string name="history_cleared">تاریخچه پاک شد</string>
+    <string name="undo">بازگردانی</string>
+    <string name="clear">پاک کردن</string>
+    <string name="cancel">لغو</string>
+    <string name="open">باز کردن</string>
+    <string name="delete">حذف</string>
+    <string name="source_generated">تولید شده</string>
+    <string name="source_scanned">اسکن شده</string>
+</resources>
+

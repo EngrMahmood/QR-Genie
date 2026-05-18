@@ -1,3 +1,9 @@
 /build
 # Ignore all release build outputs
 **/release/
+
+# Ignore extracted bundles and temporary artifacts
+/aab-extract/
+/aab-extract-patched/
+/tmp-*/
+

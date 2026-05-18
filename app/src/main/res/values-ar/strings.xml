@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="camera_permission_required">مطلوب إذن الكاميرا</string>
+    <string name="no_qr_found">لم يتم العثور على رمز QR</string>
+    <string name="please_enter_some_text">يرجى إدخال نص</string>
+    <string name="share_chooser_title">مشاركة QR Genie عبر</string>
+    <string name="update_cancelled">تم إلغاء التحديث.</string>
+    <string name="update_downloaded_restart">تم تنزيل التحديث! جارٍ إعادة التشغيل للتثبيت...</string>
+    <string name="invalid_link">رابط غير صالح</string>
+    <string name="gallery_label">المعرض</string>
+    <string name="copy_label">نسخ</string>
+    <string name="share_label">مشاركة</string>
+    <string name="history_label">السجل</string>
+    <string name="language_label">اللغة</string>
+    <string name="generate_button_text">إنشاء QR سحري</string>
+    <string name="enter_text_or_link">أدخل النص أو الرابط</string>
+    <string name="language_english">الإنجليزية</string>
+    <string name="language_urdu">الأردية</string>
+    <string name="language_arabic">العربية</string>
+    <string name="language_hindi">الهندية</string>
+    <string name="home_tagline">سريع بشكل سحري</string>
+    <string name="home_assistant_title">مساعد QR الخاص بك</string>
+    <string name="home_assistant_subtitle">امسح رموز QR أو أنشئها فورًا.</string>
+    <string name="home_scan_title">مسح رمز QR</string>
+    <string name="home_scan_subtitle">وجّه الكاميرا والتقط فورًا</string>
+    <string name="home_generate_title">إنشاء QR</string>
+    <string name="home_generate_subtitle">أنشئ رموزًا مخصصة في ثوانٍ</string>
+    <string name="home_share_message">اطّلع على QR Genie! 🪄\n\nإنها أسرع طريقة للتعامل مع رموز QR.\nحمّلها من هنا: https://play.google.com/store/apps/details?id=%1$s</string>
+    <string name="qr_code_preview">معاينة رمز QR</string>
+    <string name="share_image_text">مشاركة رمز QR</string>
+    <string name="open_magic_link">فتح الرابط السحري</string>
+    <string name="copied_to_clipboard">تم النسخ إلى الحافظة!</string>
+    <string name="scan_again">امسح مرة أخرى</string>
+    <string name="scanned_label">تم المسح</string>
+    <string name="scan_magic_qr">امسح QR السحري</string>
+    <string name="scan_result_title">نتيجة المسح</string>
+    <string name="decoded_content_label">المحتوى المفكك</string>
+    <string name="flash_label">الفلاش</string>
+    <string name="back_label">رجوع</string>
+    <string name="clear_all">مسح الكل</string>
+    <string name="no_history_yet">لا يوجد سجل بعد</string>
+    <string name="clear_history_title">مسح السجل</string>
+    <string name="clear_history_message">سيؤدي ذلك إلى حذف كل السجل نهائيًا. هل أنت متأكد؟</string>
+    <string name="history_cleared">تم مسح السجل</string>
+    <string name="undo">تراجع</string>
+    <string name="clear">مسح</string>
+    <string name="cancel">إلغاء</string>
+    <string name="open">فتح</string>
+    <string name="delete">حذف</string>
+    <string name="source_generated">تم الإنشاء</string>
+    <string name="source_scanned">تم المسح</string>
+</resources>
+

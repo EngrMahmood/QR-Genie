@@ -14,9 +14,10 @@ android {
         targetSdk = 36
         // NOTE: Play Console rejected upload because versionCode 5 was already used.
         // Bump versionCode when publishing new bundles and update versionName accordingly.
-        // Incremented for next Play release
-        versionCode = 8 // bumped for Play release (auto-bump)
-        versionName = "1.0.6"
+        // Increment versionCode and versionName for Play Store update
+        // Bump when publishing new bundles and update versionName accordingly.
+        versionCode = 9 // bumped for Play release
+        versionName = "1.0.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -112,6 +113,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
     // Compose
+    implementation("androidx.appcompat:appcompat:1.7.0")
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
