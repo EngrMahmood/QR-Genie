@@ -25,8 +25,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.qrgenie.app.R
+import com.qrgenie.app.LocalizedComponentActivity
 import com.qrgenie.app.ui.theme.QRAppTheme
 import com.qrgenie.app.data.HistoryStorage
 import androidx.lifecycle.lifecycleScope
@@ -35,7 +38,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlinx.coroutines.launch
 
-class HistoryActivity : ComponentActivity() {
+class HistoryActivity : LocalizedComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         try {
@@ -53,6 +56,8 @@ fun HistoryScreen() {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val historyClearedText = stringResource(R.string.history_cleared)
+    val undoText = stringResource(R.string.undo)
 
     val showClearConfirm = remember { mutableStateOf(false) }
 
@@ -60,10 +65,10 @@ fun HistoryScreen() {
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Scan History") },
+                title = { Text(stringResource(R.string.history_label)) },
                 actions = {
                     IconButton(onClick = { showClearConfirm.value = true }) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Clear all")
+                        Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.clear_all))
                     }
                 }
             )
@@ -71,7 +76,7 @@ fun HistoryScreen() {
     ) { padding ->
         if (items.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("No history yet")
+                Text(stringResource(R.string.no_history_yet))
             }
             return@Scaffold
         }
@@ -79,23 +84,23 @@ fun HistoryScreen() {
         if (showClearConfirm.value) {
             AlertDialog(
                 onDismissRequest = { showClearConfirm.value = false },
-                title = { Text("Clear history") },
-                text = { Text("This will permanently delete all history. Are you sure?") },
+                title = { Text(stringResource(R.string.clear_history_title)) },
+                text = { Text(stringResource(R.string.clear_history_message)) },
                 confirmButton = {
                     TextButton(onClick = {
                         showClearConfirm.value = false
                         val prev = items.toList()
                         coroutineScope.launch { ScanHistoryRepository.clearAll(context) }
                         coroutineScope.launch {
-                            val result = snackbarHostState.showSnackbar("History cleared", actionLabel = "Undo")
+                            val result = snackbarHostState.showSnackbar(historyClearedText, actionLabel = undoText)
                             if (result == SnackbarResult.ActionPerformed) {
                                 try { ScanHistoryRepository.restore(context, prev) } catch (_: Exception) {}
                             }
                         }
-                    }) { Text("Clear") }
+                    }) { Text(stringResource(R.string.clear)) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showClearConfirm.value = false }) { Text("Cancel") }
+                    TextButton(onClick = { showClearConfirm.value = false }) { Text(stringResource(R.string.cancel)) }
                 }
             )
         }
@@ -112,7 +117,7 @@ fun HistoryScreen() {
                         type = "text/plain"
                         putExtra(Intent.EXTRA_TEXT, it.content)
                     }
-                    context.startActivity(Intent.createChooser(send, "Share"))
+                    context.startActivity(Intent.createChooser(send, context.getString(R.string.share_label)))
                 }, onDelete = {
                     coroutineScope.launch { ScanHistoryRepository.delete(context, it) }
                 })
@@ -139,7 +144,7 @@ fun HistoryRow(
             // source icon
             Icon(
                 imageVector = if (item.source == "generated") Icons.Filled.AutoAwesome else Icons.Filled.QrCodeScanner,
-                contentDescription = item.source,
+                contentDescription = if (item.source == "generated") stringResource(R.string.source_generated) else stringResource(R.string.source_scanned),
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .size(28.dp)
@@ -153,9 +158,9 @@ fun HistoryRow(
             }
 
             Column(horizontalAlignment = Alignment.End) {
-                IconButton(onClick = onOpen) { Icon(Icons.Filled.OpenInNew, contentDescription = "Open") }
-                IconButton(onClick = onShare) { Icon(Icons.Filled.Share, contentDescription = "Share") }
-                IconButton(onClick = onDelete) { Icon(Icons.Filled.Delete, contentDescription = "Delete") }
+                IconButton(onClick = onOpen) { Icon(Icons.Filled.OpenInNew, contentDescription = stringResource(R.string.open)) }
+                IconButton(onClick = onShare) { Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.share_label)) }
+                IconButton(onClick = onDelete) { Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.delete)) }
             }
         }
     }

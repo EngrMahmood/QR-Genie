@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="camera_permission_required">Se requiere permiso de camara</string>
+    <string name="no_qr_found">No se encontro ningun QR</string>
+    <string name="please_enter_some_text">Ingrese algun texto</string>
+    <string name="share_chooser_title">Compartir QR Genie via</string>
+    <string name="update_cancelled">La actualizacion fue cancelada.</string>
+    <string name="update_downloaded_restart">Actualizacion descargada. Reiniciando para instalar...</string>
+    <string name="invalid_link">Enlace invalido</string>
+    <string name="gallery_label">Galeria</string>
+    <string name="copy_label">Copiar</string>
+    <string name="share_label">Compartir</string>
+    <string name="history_label">Historial</string>
+    <string name="language_label">Idioma</string>
+    <string name="generate_button_text">Generar QR magico</string>
+    <string name="enter_text_or_link">Ingrese texto o enlace</string>
+    <string name="language_english">Ingles</string>
+    <string name="language_urdu">Urdu</string>
+    <string name="language_arabic">Arabe</string>
+    <string name="language_hindi">Hindi</string>
+    <string name="home_tagline">Magicamente rapido</string>
+    <string name="home_assistant_title">Tu asistente QR</string>
+    <string name="home_assistant_subtitle">Escanea o genera codigos al instante.</string>
+    <string name="home_scan_title">Escanear codigo QR</string>
+    <string name="home_scan_subtitle">Apunta y captura al instante</string>
+    <string name="home_generate_title">Generar QR</string>
+    <string name="home_generate_subtitle">Crea codigos personalizados en segundos</string>
+    <string name="home_share_message">Prueba QR Genie!\n\nEs la forma mas rapida de manejar QRs.\nDescargalo aqui: https://play.google.com/store/apps/details?id=%1$s</string>
+    <string name="qr_code_preview">Vista previa del codigo QR</string>
+    <string name="share_image_text">Compartir codigo QR</string>
+    <string name="open_magic_link">Abrir enlace magico</string>
+    <string name="copied_to_clipboard">Copiado al portapapeles!</string>
+    <string name="scan_again">Escanear de nuevo</string>
+    <string name="scanned_label">Escaneado</string>
+    <string name="scan_magic_qr">ESCANEAR QR MAGICO</string>
+    <string name="scan_result_title">RESULTADO DEL ESCANEO</string>
+    <string name="decoded_content_label">CONTENIDO DECODIFICADO</string>
+    <string name="flash_label">Flash</string>
+    <string name="back_label">Atras</string>
+    <string name="clear_all">Borrar todo</string>
+    <string name="no_history_yet">Aun no hay historial</string>
+    <string name="clear_history_title">Borrar historial</string>
+    <string name="clear_history_message">Esto eliminara permanentemente todo el historial. Estas seguro?</string>
+    <string name="history_cleared">Historial borrado</string>
+    <string name="undo">Deshacer</string>
+    <string name="clear">Borrar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="open">Abrir</string>
+    <string name="delete">Eliminar</string>
+    <string name="source_generated">Generado</string>
+    <string name="source_scanned">Escaneado</string>
+</resources>
+

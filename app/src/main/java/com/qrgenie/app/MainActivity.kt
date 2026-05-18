@@ -15,11 +15,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color // Added missing import
@@ -31,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.util.Locale
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.InstallStateUpdatedListener
@@ -47,7 +53,36 @@ import androidx.activity.result.IntentSenderRequest
     import com.qrgenie.app.ui.history.HistoryActivity
 import androidx.compose.material.icons.filled.List
 
-class MainActivity : ComponentActivity() {
+private data class AppLanguageOption(val tag: String, val label: String)
+
+private val APP_LANGUAGES = listOf(
+    AppLanguageOption("en", "English"),
+    AppLanguageOption("ar", "العربية"),
+    AppLanguageOption("ur", "اردو"),
+    AppLanguageOption("hi", "हिंदी"),
+    AppLanguageOption("bn", "বাংলা"),
+    AppLanguageOption("pa", "ਪੰਜਾਬੀ"),
+    AppLanguageOption("fa", "فارسی"),
+    AppLanguageOption("tr", "Türkçe"),
+    AppLanguageOption("fr", "Français"),
+    AppLanguageOption("de", "Deutsch"),
+    AppLanguageOption("es", "Español"),
+    AppLanguageOption("pt", "Português"),
+    AppLanguageOption("it", "Italiano"),
+    AppLanguageOption("nl", "Nederlands"),
+    AppLanguageOption("ru", "Русский"),
+    AppLanguageOption("zh", "中文"),
+    AppLanguageOption("ja", "日本語"),
+    AppLanguageOption("ko", "한국어"),
+    AppLanguageOption("th", "ไทย"),
+    AppLanguageOption("vi", "Tiếng Việt"),
+    AppLanguageOption("id", "Bahasa Indonesia"),
+    AppLanguageOption("ms", "Bahasa Melayu"),
+    AppLanguageOption("sw", "Kiswahili"),
+    AppLanguageOption("am", "አማርኛ")
+)
+
+class MainActivity : LocalizedComponentActivity() {
     private lateinit var appUpdateManager: AppUpdateManager
     // keep a reference so we can unregister the listener
     private var installStateListener: InstallStateUpdatedListener? = null
@@ -77,7 +112,7 @@ class MainActivity : ComponentActivity() {
         ) { result ->
             if (result.resultCode != Activity.RESULT_OK) {
                 // Update flow was cancelled or failed; inform user (non-blocking)
-                Toast.makeText(this, "Update was cancelled.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.update_cancelled), Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -105,7 +140,7 @@ class MainActivity : ComponentActivity() {
                 // Once downloaded, notify the user to restart
                 Toast.makeText(
                     this,
-                    "Update downloaded! Restarting to install...",
+                    getString(R.string.update_downloaded_restart),
                     Toast.LENGTH_LONG
                 ).show()
                 appUpdateManager.completeUpdate()
@@ -163,6 +198,10 @@ class MainActivity : ComponentActivity() {
     fun HomeScreen(onScan: () -> Unit, onGenerate: () -> Unit) {
         val context = LocalContext.current
         val shareChooserTitle = stringResource(R.string.share_chooser_title)
+                val appLanguages = remember { APP_LANGUAGES }
+                var languageMenuExpanded by remember { mutableStateOf(false) }
+                var currentLocaleTag by remember { mutableStateOf(AppLanguageManager.getSavedLanguageTag(context)) }
+                val currentLanguage = appLanguages.firstOrNull { it.tag == currentLocaleTag } ?: appLanguages.first()
 
         // Version fetch logic
         val appVersion = remember(context) {
@@ -178,8 +217,8 @@ class MainActivity : ComponentActivity() {
                     pm.getPackageInfo(context.packageName, 0)
                 }
                 "v${info.versionName}"
-            } catch (e: Exception) {
-                "v1.0.0"
+                    } catch (e: Exception) {
+                                "v1.0.0"
             }
         }
 
@@ -218,7 +257,7 @@ class MainActivity : ComponentActivity() {
 
                             Column {
                                 Text(
-                                    text = "QR GENIE",
+                                    text = stringResource(R.string.app_name),
                                     style = MaterialTheme.typography.titleLarge.copy(
                                         fontWeight = FontWeight.Black,
                                         letterSpacing = 2.sp,
@@ -226,7 +265,7 @@ class MainActivity : ComponentActivity() {
                                     )
                                 )
                                 Text(
-                                    text = "MAGICALLY FAST",
+                                    text = stringResource(R.string.home_tagline),
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         color = Color.White.copy(alpha = 0.6f),
                                         letterSpacing = 1.5.sp,
@@ -240,16 +279,11 @@ class MainActivity : ComponentActivity() {
                         Row {
                         Surface(
                             onClick = {
-                                val shareMessage = """
-            Check out QR Genie! 🪄
-            
-            It's the fastest way to handle QRs.
-            Download it here: https://play.google.com/store/apps/details?id=${context.packageName}
-        """.trimIndent()
+                                val shareMessage = context.getString(R.string.home_share_message, context.packageName)
 
                                                 val sendIntent = Intent().apply {
                                     action = Intent.ACTION_SEND
-                                    putExtra(Intent.EXTRA_TEXT, shareMessage)
+                                                                    putExtra(Intent.EXTRA_TEXT, shareMessage)
                                     type = "text/plain"
                                 }
                                                 val shareIntent = Intent.createChooser(sendIntent, shareChooserTitle)
@@ -262,7 +296,7 @@ class MainActivity : ComponentActivity() {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Default.Share,
-                                    contentDescription = "Share",
+                                    contentDescription = stringResource(R.string.share_label),
                                     tint = Color.White,
                                     modifier = Modifier.size(18.dp)
                                 )
@@ -276,7 +310,65 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.size(40.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(imageVector = Icons.Default.List, contentDescription = "History", tint = Color.White, modifier = Modifier.size(18.dp))
+                                Icon(imageVector = Icons.Default.List, contentDescription = stringResource(R.string.history_label), tint = Color.White, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Box {
+                            Surface(
+                                onClick = { languageMenuExpanded = true },
+                                shape = RoundedCornerShape(20.dp),
+                                color = Color.White.copy(alpha = 0.15f),
+                                modifier = Modifier.height(40.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Language,
+                                        contentDescription = stringResource(R.string.language_label),
+                                        tint = Color.White,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        text = currentLanguage.tag.uppercase(Locale.ROOT),
+                                        color = Color.White,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                            DropdownMenu(
+                                expanded = languageMenuExpanded,
+                                onDismissRequest = { languageMenuExpanded = false }
+                            ) {
+                                appLanguages.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Column {
+                                                Text(option.label)
+                                                Text(
+                                                    option.tag.uppercase(Locale.ROOT),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.outline
+                                                )
+                                            }
+                                        },
+                                        trailingIcon = {
+                                            if (option.tag == currentLocaleTag) {
+                                                Icon(Icons.Default.Check, contentDescription = null)
+                                            }
+                                        },
+                                        onClick = {
+                                            AppLanguageManager.saveLanguageTag(context, option.tag)
+                                            currentLocaleTag = option.tag
+                                            languageMenuExpanded = false
+                                            (context as? ComponentActivity)?.recreate()
+                                        }
+                                    )
+                                }
                             }
                         }
                         }
@@ -294,13 +386,13 @@ class MainActivity : ComponentActivity() {
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "Your QR Assistant",
+                        text = stringResource(R.string.home_assistant_title),
                         style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Scan or generate codes instantly.",
+                        text = stringResource(R.string.home_assistant_subtitle),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.outline,
                         textAlign = TextAlign.Center
@@ -310,8 +402,8 @@ class MainActivity : ComponentActivity() {
                 Spacer(modifier = Modifier.height(10.dp))
 
                 MenuCard(
-                    title = "Scan QR Code",
-                    subtitle = "Point and capture instantly",
+                    title = stringResource(R.string.home_scan_title),
+                    subtitle = stringResource(R.string.home_scan_subtitle),
                     icon = Icons.Default.QrCodeScanner,
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -319,8 +411,8 @@ class MainActivity : ComponentActivity() {
                 )
 
                 MenuCard(
-                    title = "Generate QR",
-                    subtitle = "Create custom codes in seconds",
+                    title = stringResource(R.string.home_generate_title),
+                    subtitle = stringResource(R.string.home_generate_subtitle),
                     icon = Icons.Default.AddCircle,
                     containerColor = Secondary,
                     contentColor = OnSecondary,

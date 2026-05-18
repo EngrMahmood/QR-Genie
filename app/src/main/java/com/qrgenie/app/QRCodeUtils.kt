@@ -21,14 +21,21 @@ import com.google.zxing.MultiFormatReader
 import com.google.zxing.RGBLuminanceSource
 import com.google.zxing.common.HybridBinarizer
 import com.google.zxing.DecodeHintType
+import com.google.zxing.BarcodeFormat
+import java.nio.charset.Charset
 import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
 import android.media.Image
 import android.graphics.Rect
 import java.io.ByteArrayOutputStream
 import android.graphics.Matrix
+import android.util.Log
+import com.google.zxing.PlanarYUVLuminanceSource
 
+@OptIn(ExperimentalGetImage::class)
 object QRCodeUtils {
+
+    private const val TAG = "QRCodeUtils"
 
     /**
      * Used by ScanActivity for Gallery images
@@ -43,14 +50,19 @@ object QRCodeUtils {
         return@withContext try {
             val barcodes = Tasks.await(scanner.process(image))
             val mlResult = barcodes.firstOrNull()?.rawValue
+            Log.d(TAG, "Gallery ML Kit result: ${mlResult ?: "<null>"}")
             // If ML Kit returned a result but it contains replacement characters (e.g. "?")
             // try a ZXing fallback decode with UTF-8 to preserve Arabic/Urdu and other special characters.
-            if (mlResult != null && mlResult.contains("?") && bitmap != null) {
+            if (mlResult != null && mlResult.contains("?")) {
                 val zxing = decodeBitmapWithZXing(bitmap)
-                if (!zxing.isNullOrEmpty()) return@withContext zxing
+                if (!zxing.isNullOrEmpty()) {
+                    Log.d(TAG, "Gallery ZXing(Bitmap) succeeded: ${toCodePointsString(zxing)}")
+                    return@withContext zxing
+                }
             }
             mlResult
         } catch (e: Exception) {
+            Log.d(TAG, "Gallery ML Kit exception: ${e.message}")
             // On error with ML Kit, try ZXing fallback
             decodeBitmapWithZXing(bitmap)
         }
@@ -73,23 +85,34 @@ object QRCodeUtils {
             scanner.process(image)
                 .addOnSuccessListener { barcodes ->
                     val result = barcodes.firstOrNull()?.rawValue
+                    Log.d(TAG, "ML Kit result: ${result ?: "<null>"}")
                     // If ML Kit provided a possibly-garbled result (contains '?') or no result,
                     // attempt ZXing fallback on the camera frame bitmap to preserve UTF-8 text.
                     if (result != null && !result.contains("?")) {
+                        Log.d(TAG, "Using ML Kit result: ${toCodePointsString(result)}")
                         onDetected(result)
                     } else {
-                        // try ZXing decode from ImageProxy
-                        val bmp = imageProxyToBitmap(imageProxy)
-                        if (bmp != null) {
-                            val z = decodeBitmapWithZXing(bmp)
-                            if (!z.isNullOrEmpty()) {
-                                onDetected(z)
+                        // try ZXing decode directly from the ImageProxy YUV planes (faster, avoids JPEG conversion)
+                        val zFromYuv = decodeImageProxyWithZXing(imageProxy)
+                        if (!zFromYuv.isNullOrEmpty()) {
+                            Log.d(TAG, "ZXing(YUV) succeeded: ${toCodePointsString(zFromYuv)}")
+                            onDetected(zFromYuv)
+                        } else {
+                            // fallback to bitmap-based ZXing decode (slower) if direct YUV decode failed
+                            val bmp = imageProxyToBitmap(imageProxy)
+                            if (bmp != null) {
+                                val z = decodeBitmapWithZXing(bmp)
+                                if (!z.isNullOrEmpty()) {
+                                    Log.d(TAG, "ZXing(Bitmap) succeeded: ${toCodePointsString(z)}")
+                                    onDetected(z)
+                                } else if (result != null) {
+                                    Log.d(TAG, "Using ML Kit fallback result (may be garbled): ${result}")
+                                    // fallback to ML Kit result even if it contained '?'
+                                    onDetected(result)
+                                }
                             } else if (result != null) {
-                                // fallback to ML Kit result even if it contained '?'
                                 onDetected(result)
                             }
-                        } else if (result != null) {
-                            onDetected(result)
                         }
                     }
                 }
@@ -101,6 +124,8 @@ object QRCodeUtils {
         }
     }
 
+    @OptIn(ExperimentalGetImage::class)
+    @ExperimentalGetImage
     private fun imageProxyToBitmap(imageProxy: ImageProxy): Bitmap? {
         val image: Image = imageProxy.image ?: return null
         return try {
@@ -119,6 +144,7 @@ object QRCodeUtils {
             }
             bmp
         } catch (e: Exception) {
+            Log.d(TAG, "imageProxyToBitmap failed: ${e.message}")
             null
         }
     }
@@ -126,52 +152,38 @@ object QRCodeUtils {
     private fun yuv420ToNV21(image: Image): ByteArray {
         val width = image.width
         val height = image.height
-        val ySize = width * height
-        val uvSize = width * height / 4
+        val yPlane = image.planes[0]
+        val uPlane = image.planes[1]
+        val vPlane = image.planes[2]
 
-        val nv21 = ByteArray(ySize + uvSize * 2)
+        val nv21 = ByteArray(width * height * 3 / 2)
+        var outPos = 0
 
-        val yBuffer = image.planes[0].buffer // Y
-        val uBuffer = image.planes[1].buffer // U
-        val vBuffer = image.planes[2].buffer // V
+        // Copy Y plane row-by-row, respecting rowStride.
+        val yBuffer = yPlane.buffer.duplicate()
+        for (row in 0 until height) {
+            val rowStart = row * yPlane.rowStride
+            yBuffer.position(rowStart)
+            yBuffer.get(nv21, outPos, width)
+            outPos += width
+        }
 
-        var rowStride = image.planes[0].rowStride
-        var pos = 0
-        if (rowStride == width) {
-            yBuffer.get(nv21, 0, ySize)
-            pos += ySize
-        } else {
-            val yRow = ByteArray(rowStride)
-            var remaining = ySize
-            while (remaining > 0) {
-                val toGet = minOf(rowStride, remaining)
-                yBuffer.get(yRow, 0, toGet)
-                System.arraycopy(yRow, 0, nv21, pos, toGet)
-                pos += toGet
-                remaining -= toGet
+        // Copy UV planes as interleaved VU (NV21)
+        val chromaHeight = height / 2
+        val chromaWidth = width / 2
+        val uBuffer = uPlane.buffer.duplicate()
+        val vBuffer = vPlane.buffer.duplicate()
+        for (row in 0 until chromaHeight) {
+            val uRowStart = row * uPlane.rowStride
+            val vRowStart = row * vPlane.rowStride
+            for (col in 0 until chromaWidth) {
+                val uIndex = uRowStart + col * uPlane.pixelStride
+                val vIndex = vRowStart + col * vPlane.pixelStride
+                nv21[outPos++] = vBuffer.get(vIndex)
+                nv21[outPos++] = uBuffer.get(uIndex)
             }
         }
 
-        // Interleave V and U for NV21
-        val chromaRowStride = image.planes[2].rowStride
-        val chromaPixelStride = image.planes[2].pixelStride
-        val vRow = ByteArray(chromaRowStride)
-        val uRow = ByteArray(image.planes[1].rowStride)
-
-        val uvHeight = height / 2
-        var uvPos = ySize
-        for (row in 0 until uvHeight) {
-            vBuffer.get(vRow, 0, chromaRowStride)
-            uBuffer.get(uRow, 0, image.planes[1].rowStride)
-            var col = 0
-            while (col < width) {
-                val v = vRow[col * chromaPixelStride]
-                val u = uRow[col * image.planes[1].pixelStride]
-                nv21[uvPos++] = v
-                nv21[uvPos++] = u
-                col += 2
-            }
-        }
         return nv21
     }
 
@@ -183,12 +195,110 @@ object QRCodeUtils {
             bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
             val source = RGBLuminanceSource(width, height, pixels)
             val binaryBitmap = BinaryBitmap(HybridBinarizer(source))
-            val hints = mapOf(DecodeHintType.CHARACTER_SET to "UTF-8", DecodeHintType.TRY_HARDER to true)
-            val result = MultiFormatReader().apply { setHints(hints) }.decode(binaryBitmap)
-            result.text
+
+            // Use explicit mutable hints, prefer QR_CODE format and try harder
+            val hints = hashMapOf<DecodeHintType, Any>()
+            hints[DecodeHintType.CHARACTER_SET] = "UTF-8"
+            hints[DecodeHintType.TRY_HARDER] = true
+            hints[DecodeHintType.POSSIBLE_FORMATS] = listOf(BarcodeFormat.QR_CODE)
+
+            val reader = MultiFormatReader()
+            reader.setHints(hints)
+            val result = reader.decode(binaryBitmap)
+
+            // If ZXing produced text but it contains replacement chars (e.g. '?'),
+            // try decoding the raw bytes using UTF-8 and some other likely encodings
+            val text = result.text
+            if (text != null && !text.contains("?")) return text
+
+            val raw = result.rawBytes
+            if (raw != null) {
+                val encodings = listOf("UTF-8", "Windows-1256", "ISO-8859-1")
+                for (enc in encodings) {
+                    try {
+                        val s = String(raw, Charset.forName(enc))
+                        if (!s.contains("?")) {
+                            // prefer a candidate that contains Arabic-script characters
+                            if (containsArabicScript(s)) return s
+                            // otherwise keep as a fallback
+                            return s
+                        }
+                    } catch (_: Exception) {
+                    }
+                }
+            }
+
+            // final fallback to whatever ZXing produced
+            text
         } catch (e: Exception) {
+            Log.d(TAG, "decodeBitmapWithZXing failed: ${e.message}")
             null
         }
+    }
+
+    @OptIn(ExperimentalGetImage::class)
+    private fun decodeImageProxyWithZXing(imageProxy: ImageProxy): String? {
+        try {
+            val image = imageProxy.image ?: return null
+            // Use existing NV21 conversion helper
+            val nv21 = yuv420ToNV21(image)
+
+            val width = image.width
+            val height = image.height
+
+            // Create a PlanarYUVLuminanceSource directly over the NV21 buffer
+            val source = PlanarYUVLuminanceSource(nv21, width, height, 0, 0, width, height, false)
+            val binaryBitmap = BinaryBitmap(HybridBinarizer(source))
+
+            val hints = hashMapOf<DecodeHintType, Any>()
+            hints[DecodeHintType.CHARACTER_SET] = "UTF-8"
+            hints[DecodeHintType.TRY_HARDER] = true
+            hints[DecodeHintType.POSSIBLE_FORMATS] = listOf(BarcodeFormat.QR_CODE)
+
+            val reader = MultiFormatReader()
+            reader.setHints(hints)
+            val result = reader.decode(binaryBitmap)
+
+            val text = result.text
+            if (text != null && !text.contains("?")) return text
+
+            val raw = result.rawBytes
+            if (raw != null) {
+                val encodings = listOf("UTF-8", "Windows-1256", "ISO-8859-1")
+                for (enc in encodings) {
+                    try {
+                        val s = String(raw, Charset.forName(enc))
+                        if (!s.contains("?")) {
+                            if (containsArabicScript(s)) return s
+                            return s
+                        }
+                    } catch (_: Exception) {
+                    }
+                }
+            }
+
+            return text
+        } catch (e: Exception) {
+            Log.d(TAG, "ZXing(YUV) decode exception: ${e.message}")
+            return null
+        }
+    }
+
+    private fun toCodePointsString(s: String): String {
+        val codes = ArrayList<String>(s.length)
+        for (ch in s) codes.add(ch.code.toString())
+        return codes.joinToString(",")
+    }
+
+    private fun containsArabicScript(s: String): Boolean {
+        for (ch in s) {
+            val code = ch.code
+            // Arabic and extended Arabic ranges
+            if ((code in 0x0600..0x06FF) || (code in 0x0750..0x077F) || (code in 0x08A0..0x08FF) || (code in 0xFB50..0xFDFF) || (code in 0xFE70..0xFEFF)) {
+                return true
+            }
+        }
+        return false
     }
 
     /**

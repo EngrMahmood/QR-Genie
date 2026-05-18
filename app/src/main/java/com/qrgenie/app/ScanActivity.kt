@@ -8,6 +8,8 @@ import android.content.Intent
 import android.os.Bundle
 import android.provider.MediaStore
 import android.widget.Toast
+import androidx.core.content.ContextCompat
+import android.content.pm.PackageManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -39,6 +41,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,31 +57,44 @@ import java.util.concurrent.Executors
 
 
 
-class ScanActivity : ComponentActivity() {
+class ScanActivity : LocalizedComponentActivity() {
     private lateinit var cameraExecutor: ExecutorService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         cameraExecutor = Executors.newSingleThreadExecutor()
 
+        // Helper that sets the Compose content (start camera UI)
+        fun startCameraUi() {
+            setContent {
+                QRAppTheme {
+                    CameraScanScreen(cameraExecutor) { qrText ->
+                        val intent = Intent(this, ScanResultActivity::class.java).apply {
+                            putExtra("EXTRA_QR_CONTENT", qrText)
+                        }
+                        startActivity(intent)
+                        finish()
+                    }
+                }
+            }
+        }
+
+        // If permission already granted, immediately start the camera UI. Otherwise request it and
+        // only start the UI when the user grants permission. This prevents composing the camera
+        // preview before permissions are available (which caused a black screen until restart).
         val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (!granted) {
+            if (granted) {
+                startCameraUi()
+            } else {
                 Toast.makeText(this, getString(R.string.camera_permission_required), Toast.LENGTH_SHORT).show()
                 finish()
             }
         }
-        permissionLauncher.launch(Manifest.permission.CAMERA)
 
-        setContent {
-            QRAppTheme {
-                CameraScanScreen(cameraExecutor) { qrText ->
-                    val intent = Intent(this, ScanResultActivity::class.java).apply {
-                        putExtra("EXTRA_QR_CONTENT", qrText)
-                    }
-                    startActivity(intent)
-                    finish()
-                }
-            }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            startCameraUi()
+        } else {
+            permissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
 
@@ -220,10 +236,10 @@ fun CameraScanScreen(executor: ExecutorService, onQRCodeDetected: (String) -> Un
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = { (context as? ComponentActivity)?.finish() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.back_label), tint = Color.White)
                     }
                     Text(
-                        "SCAN MAGIC QR",
+                        stringResource(R.string.scan_magic_qr),
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Black,
                             color = Color.White,
@@ -268,7 +284,7 @@ fun CameraScanScreen(executor: ExecutorService, onQRCodeDetected: (String) -> Un
                         Icon(
                             imageVector = if (isFlashOn) Icons.Filled.FlashOn
                             else Icons.Filled.FlashOff,
-                            contentDescription = "Flash",
+                            contentDescription = stringResource(R.string.flash_label),
                             tint = if (isFlashOn) Color.Yellow else Color.White
                         )
                     }
@@ -281,7 +297,7 @@ fun CameraScanScreen(executor: ExecutorService, onQRCodeDetected: (String) -> Un
                     ) {
                         Icon(Icons.Filled.PhotoLibrary, null, tint = Color.Black)
                         Spacer(Modifier.width(8.dp))
-                        Text("Gallery", color = Color.Black, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.gallery_label), color = Color.Black, fontWeight = FontWeight.Bold)
                     }
 
                     // Flip Camera
@@ -355,7 +371,7 @@ fun ConfirmationOverlay() {
             modifier = Modifier.size(140.dp).alpha(alpha.value)
         ) {
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                    Icon(Icons.Filled.CheckCircle, contentDescription = "Scanned", tint = Color.White, modifier = Modifier.size(64.dp))
+                    Icon(Icons.Filled.CheckCircle, contentDescription = stringResource(R.string.scanned_label), tint = Color.White, modifier = Modifier.size(64.dp))
                 }
         }
     }

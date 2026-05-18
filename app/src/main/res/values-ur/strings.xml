@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="camera_permission_required">کیمرہ کی اجازت درکار ہے</string>
+    <string name="no_qr_found">کوئی QR نہیں ملا</string>
+    <string name="please_enter_some_text">براہِ کرم کچھ متن درج کریں</string>
+    <string name="share_chooser_title">QR Genie شیئر کریں</string>
+    <string name="update_cancelled">اپ ڈیٹ منسوخ ہو گیا۔</string>
+    <string name="update_downloaded_restart">اپ ڈیٹ ڈاؤن لوڈ ہو گئی! انسٹال کرنے کے لیے دوبارہ شروع کیا جا رہا ہے...</string>
+    <string name="invalid_link">غلط لنک</string>
+    <string name="gallery_label">گیلری</string>
+    <string name="copy_label">کاپی</string>
+    <string name="share_label">شیئر</string>
+    <string name="history_label">ہسٹری</string>
+    <string name="language_label">زبان</string>
+    <string name="generate_button_text">جادوئی QR بنائیں</string>
+    <string name="enter_text_or_link">متن یا لنک درج کریں</string>
+    <string name="language_english">انگریزی</string>
+    <string name="language_urdu">اردو</string>
+    <string name="language_arabic">عربی</string>
+    <string name="language_hindi">ہندی</string>
+    <string name="home_tagline">جادوی طور پر تیز</string>
+    <string name="home_assistant_title">آپ کا QR اسسٹنٹ</string>
+    <string name="home_assistant_subtitle">QR فوراً اسکین یا بنائیں۔</string>
+    <string name="home_scan_title">QR کوڈ اسکین کریں</string>
+    <string name="home_scan_subtitle">اشارہ کریں اور فوراً کیپچر کریں</string>
+    <string name="home_generate_title">QR بنائیں</string>
+    <string name="home_generate_subtitle">چند سیکنڈ میں کسٹم کوڈ بنائیں</string>
+    <string name="home_share_message">QR Genie دیکھیں! 🪄\n\nQRs ہینڈل کرنے کا سب سے تیز طریقہ۔\nیہاں سے ڈاؤن لوڈ کریں: https://play.google.com/store/apps/details?id=%1$s</string>
+    <string name="qr_code_preview">QR کوڈ پیش نظارہ</string>
+    <string name="share_image_text">QR کوڈ شیئر کریں</string>
+    <string name="open_magic_link">جادوئی لنک کھولیں</string>
+    <string name="copied_to_clipboard">کلپ بورڈ میں کاپی ہو گیا!</string>
+    <string name="scan_again">دوبارہ اسکین کریں</string>
+    <string name="scanned_label">اسکین ہو گیا</string>
+    <string name="scan_magic_qr">جادوئی QR اسکین کریں</string>
+    <string name="scan_result_title">اسکین کا نتیجہ</string>
+    <string name="decoded_content_label">ڈی کوڈ شدہ مواد</string>
+    <string name="flash_label">فلیش</string>
+    <string name="back_label">واپس</string>
+    <string name="clear_all">سب صاف کریں</string>
+    <string name="no_history_yet">ابھی تک کوئی ہسٹری نہیں</string>
+    <string name="clear_history_title">ہسٹری صاف کریں</string>
+    <string name="clear_history_message">اس سے تمام ہسٹری مستقل طور پر حذف ہو جائے گی۔ کیا آپ کو یقین ہے؟</string>
+    <string name="history_cleared">ہسٹری صاف ہو گئی</string>
+    <string name="undo">واپس لیں</string>
+    <string name="clear">صاف کریں</string>
+    <string name="cancel">منسوخ کریں</string>
+    <string name="open">کھولیں</string>
+    <string name="delete">حذف کریں</string>
+    <string name="source_generated">بنایا گیا</string>
+    <string name="source_scanned">اسکین شدہ</string>
+</resources>
+

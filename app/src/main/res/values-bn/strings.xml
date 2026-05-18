@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="camera_permission_required">ক্যামেরা অনুমতি প্রয়োজন</string>
+    <string name="no_qr_found">কোনও QR পাওয়া যায়নি</string>
+    <string name="please_enter_some_text">অনুগ্রহ করে কিছু লিখুন</string>
+    <string name="share_chooser_title">QR Genie শেয়ার করুন</string>
+    <string name="update_cancelled">আপডেট বাতিল হয়েছে।</string>
+    <string name="update_downloaded_restart">আপডেট ডাউনলোড হয়েছে! ইনস্টলের জন্য পুনরায় চালু হচ্ছে...</string>
+    <string name="invalid_link">অবৈধ লিংক</string>
+    <string name="gallery_label">গ্যালারি</string>
+    <string name="copy_label">কপি</string>
+    <string name="share_label">শেয়ার</string>
+    <string name="history_label">ইতিহাস</string>
+    <string name="language_label">ভাষা</string>
+    <string name="generate_button_text">ম্যাজিক QR তৈরি করুন</string>
+    <string name="enter_text_or_link">টেক্সট বা লিংক দিন</string>
+    <string name="language_english">ইংরেজি</string>
+    <string name="language_urdu">উর্দু</string>
+    <string name="language_arabic">আরবি</string>
+    <string name="language_hindi">হিন্দি</string>
+    <string name="home_tagline">ম্যাজিকের মতো দ্রুত</string>
+    <string name="home_assistant_title">আপনার QR সহকারী</string>
+    <string name="home_assistant_subtitle">তাৎক্ষণিকভাবে কোড স্ক্যান বা তৈরি করুন।</string>
+    <string name="home_scan_title">QR কোড স্ক্যান করুন</string>
+    <string name="home_scan_subtitle">ক্যামেরা তাক করুন এবং সঙ্গে সঙ্গে ধরুন</string>
+    <string name="home_generate_title">QR তৈরি করুন</string>
+    <string name="home_generate_subtitle">কয়েক সেকেন্ডে কাস্টম কোড তৈরি করুন</string>
+    <string name="home_share_message">QR Genie দেখে নিন!\n\nQR ব্যবহারের সবচেয়ে দ্রুত উপায়।\nএখান থেকে ডাউনলোড করুন: https://play.google.com/store/apps/details?id=%1$s</string>
+    <string name="qr_code_preview">QR কোড প্রিভিউ</string>
+    <string name="share_image_text">QR কোড শেয়ার করুন</string>
+    <string name="open_magic_link">ম্যাজিক লিংক খুলুন</string>
+    <string name="copied_to_clipboard">ক্লিপবোর্ডে কপি হয়েছে!</string>
+    <string name="scan_again">আবার স্ক্যান করুন</string>
+    <string name="scanned_label">স্ক্যান সম্পন্ন</string>
+    <string name="scan_magic_qr">ম্যাজিক QR স্ক্যান</string>
+    <string name="scan_result_title">স্ক্যান ফলাফল</string>
+    <string name="decoded_content_label">ডিকোড করা কনটেন্ট</string>
+    <string name="flash_label">ফ্ল্যাশ</string>
+    <string name="back_label">ফিরে যান</string>
+    <string name="clear_all">সব মুছুন</string>
+    <string name="no_history_yet">এখনও কোনও ইতিহাস নেই</string>
+    <string name="clear_history_title">ইতিহাস মুছুন</string>
+    <string name="clear_history_message">এতে সব ইতিহাস স্থায়ীভাবে মুছে যাবে। আপনি কি নিশ্চিত?</string>
+    <string name="history_cleared">ইতিহাস মুছে গেছে</string>
+    <string name="undo">আনডু</string>
+    <string name="clear">মুছুন</string>
+    <string name="cancel">বাতিল</string>
+    <string name="open">খুলুন</string>
+    <string name="delete">মুছুন</string>
+    <string name="source_generated">তৈরি করা</string>
+    <string name="source_scanned">স্ক্যান করা</string>
+</resources>
+

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="camera_permission_required">Autorisation de la camera requise</string>
+    <string name="no_qr_found">Aucun QR trouve</string>
+    <string name="please_enter_some_text">Veuillez saisir du texte</string>
+    <string name="share_chooser_title">Partager QR Genie via</string>
+    <string name="update_cancelled">La mise a jour a ete annulee.</string>
+    <string name="update_downloaded_restart">Mise a jour telechargee ! Redemarrage pour installer...</string>
+    <string name="invalid_link">Lien invalide</string>
+    <string name="gallery_label">Galerie</string>
+    <string name="copy_label">Copier</string>
+    <string name="share_label">Partager</string>
+    <string name="history_label">Historique</string>
+    <string name="language_label">Langue</string>
+    <string name="generate_button_text">Generer un QR magique</string>
+    <string name="enter_text_or_link">Saisissez du texte ou un lien</string>
+    <string name="language_english">Anglais</string>
+    <string name="language_urdu">Ourdou</string>
+    <string name="language_arabic">Arabe</string>
+    <string name="language_hindi">Hindi</string>
+    <string name="home_tagline">Magiquement rapide</string>
+    <string name="home_assistant_title">Votre assistant QR</string>
+    <string name="home_assistant_subtitle">Scannez ou generez des codes instantanement.</string>
+    <string name="home_scan_title">Scanner un code QR</string>
+    <string name="home_scan_subtitle">Pointez et capturez instantanement</string>
+    <string name="home_generate_title">Generer un QR</string>
+    <string name="home_generate_subtitle">Creez des codes personnalises en quelques secondes</string>
+    <string name="home_share_message">Decouvrez QR Genie !\n\nC\'est le moyen le plus rapide de gerer les QR.\nTelechargez-le ici : https://play.google.com/store/apps/details?id=%1$s</string>
+    <string name="qr_code_preview">Apercu du code QR</string>
+    <string name="share_image_text">Partager le code QR</string>
+    <string name="open_magic_link">Ouvrir le lien magique</string>
+    <string name="copied_to_clipboard">Copie dans le presse-papiers !</string>
+    <string name="scan_again">Scanner de nouveau</string>
+    <string name="scanned_label">Scanne</string>
+    <string name="scan_magic_qr">SCANNER LE QR MAGIQUE</string>
+    <string name="scan_result_title">RESULTAT DU SCAN</string>
+    <string name="decoded_content_label">CONTENU DECODE</string>
+    <string name="flash_label">Flash</string>
+    <string name="back_label">Retour</string>
+    <string name="clear_all">Tout effacer</string>
+    <string name="no_history_yet">Aucun historique pour le moment</string>
+    <string name="clear_history_title">Effacer l\'historique</string>
+    <string name="clear_history_message">Cela supprimera definitivement tout l\'historique. Etes-vous sur ?</string>
+    <string name="history_cleared">Historique efface</string>
+    <string name="undo">Annuler</string>
+    <string name="clear">Effacer</string>
+    <string name="cancel">Annuler</string>
+    <string name="open">Ouvrir</string>
+    <string name="delete">Supprimer</string>
+    <string name="source_generated">Genere</string>
+    <string name="source_scanned">Scanne</string>
+</resources>
+
