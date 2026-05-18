@@ -21,6 +21,12 @@ import com.google.zxing.MultiFormatReader
 import com.google.zxing.RGBLuminanceSource
 import com.google.zxing.common.HybridBinarizer
 import com.google.zxing.DecodeHintType
+import android.graphics.BitmapFactory
+import android.graphics.ImageFormat
+import android.media.Image
+import android.graphics.Rect
+import java.io.ByteArrayOutputStream
+import android.graphics.Matrix
 
 object QRCodeUtils {
 
@@ -67,8 +73,24 @@ object QRCodeUtils {
             scanner.process(image)
                 .addOnSuccessListener { barcodes ->
                     val result = barcodes.firstOrNull()?.rawValue
-                    if (result != null) {
+                    // If ML Kit provided a possibly-garbled result (contains '?') or no result,
+                    // attempt ZXing fallback on the camera frame bitmap to preserve UTF-8 text.
+                    if (result != null && !result.contains("?")) {
                         onDetected(result)
+                    } else {
+                        // try ZXing decode from ImageProxy
+                        val bmp = imageProxyToBitmap(imageProxy)
+                        if (bmp != null) {
+                            val z = decodeBitmapWithZXing(bmp)
+                            if (!z.isNullOrEmpty()) {
+                                onDetected(z)
+                            } else if (result != null) {
+                                // fallback to ML Kit result even if it contained '?'
+                                onDetected(result)
+                            }
+                        } else if (result != null) {
+                            onDetected(result)
+                        }
                     }
                 }
                 .addOnCompleteListener {
@@ -77,6 +99,80 @@ object QRCodeUtils {
         } else {
             imageProxy.close()
         }
+    }
+
+    private fun imageProxyToBitmap(imageProxy: ImageProxy): Bitmap? {
+        val image: Image = imageProxy.image ?: return null
+        return try {
+            val nv21 = yuv420ToNV21(image)
+            val yuvImage = android.graphics.YuvImage(nv21, ImageFormat.NV21, image.width, image.height, null)
+            val out = ByteArrayOutputStream()
+            yuvImage.compressToJpeg(Rect(0, 0, image.width, image.height), 100, out)
+            val yuvBytes = out.toByteArray()
+            var bmp = BitmapFactory.decodeByteArray(yuvBytes, 0, yuvBytes.size)
+            // rotate bitmap if needed
+            val rotation = imageProxy.imageInfo.rotationDegrees
+            if (rotation != 0) {
+                val matrix = Matrix()
+                matrix.postRotate(rotation.toFloat())
+                bmp = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, matrix, true)
+            }
+            bmp
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun yuv420ToNV21(image: Image): ByteArray {
+        val width = image.width
+        val height = image.height
+        val ySize = width * height
+        val uvSize = width * height / 4
+
+        val nv21 = ByteArray(ySize + uvSize * 2)
+
+        val yBuffer = image.planes[0].buffer // Y
+        val uBuffer = image.planes[1].buffer // U
+        val vBuffer = image.planes[2].buffer // V
+
+        var rowStride = image.planes[0].rowStride
+        var pos = 0
+        if (rowStride == width) {
+            yBuffer.get(nv21, 0, ySize)
+            pos += ySize
+        } else {
+            val yRow = ByteArray(rowStride)
+            var remaining = ySize
+            while (remaining > 0) {
+                val toGet = minOf(rowStride, remaining)
+                yBuffer.get(yRow, 0, toGet)
+                System.arraycopy(yRow, 0, nv21, pos, toGet)
+                pos += toGet
+                remaining -= toGet
+            }
+        }
+
+        // Interleave V and U for NV21
+        val chromaRowStride = image.planes[2].rowStride
+        val chromaPixelStride = image.planes[2].pixelStride
+        val vRow = ByteArray(chromaRowStride)
+        val uRow = ByteArray(image.planes[1].rowStride)
+
+        val uvHeight = height / 2
+        var uvPos = ySize
+        for (row in 0 until uvHeight) {
+            vBuffer.get(vRow, 0, chromaRowStride)
+            uBuffer.get(uRow, 0, image.planes[1].rowStride)
+            var col = 0
+            while (col < width) {
+                val v = vRow[col * chromaPixelStride]
+                val u = uRow[col * image.planes[1].pixelStride]
+                nv21[uvPos++] = v
+                nv21[uvPos++] = u
+                col += 2
+            }
+        }
+        return nv21
     }
 
     private fun decodeBitmapWithZXing(bitmap: Bitmap): String? {
