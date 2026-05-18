@@ -3,7 +3,8 @@ QR Genie — Release 1.0.7
 Release date: 2026-05-19
 
 Short (Play Store "What's new"):
-- Fixed camera black screen on first permission grant. Improved camera permission handling and stability.
+- Fixed camera black screen on first permission grant — no restart needed.
+- Added language support: Arabic, Bengali, German, Spanish, Farsi, French, Hindi, Turkish, Urdu and Chinese.
 
 Long (full release notes / GitHub Release body):
 This release prepares QR Genie for Play Store update (versionCode=9 / versionName=1.0.7).
