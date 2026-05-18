@@ -20,6 +20,8 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -51,6 +53,7 @@ fun GenerateScreen() {
     var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
     val context = LocalContext.current
     val scrollState = rememberScrollState()
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -115,6 +118,12 @@ fun GenerateScreen() {
                 onClick = {
                             if (text.isNotBlank()) {
                                 qrBitmap = generateQRCodeBitmap(text)
+                                // save generated content into history (non-blocking)
+                                try {
+                                    coroutineScope.launch {
+                                        try { com.qrgenie.app.data.ScanHistoryRepository.insert(context, text, "generated") } catch (_: Exception) {}
+                                    }
+                                } catch (_: Exception) {}
                             } else {
                                 Toast.makeText(context, context.getString(R.string.please_enter_some_text), Toast.LENGTH_SHORT).show()
                             }
