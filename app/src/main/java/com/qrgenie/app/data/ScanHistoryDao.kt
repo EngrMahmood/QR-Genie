@@ -34,7 +34,8 @@ object HistoryStorage {
                     val id = o.optLong("id", i.toLong())
                     val content = o.optString("content", "")
                     val ts = o.optLong("timestamp", 0L)
-                    list.add(ScanHistoryItem(id = id, content = content, timestamp = ts))
+                    val source = o.optString("source", "scanned")
+                    list.add(ScanHistoryItem(id = id, content = content, timestamp = ts, source = source))
                 }
                 _state.value = list
             } catch (_: Exception) {
@@ -53,6 +54,7 @@ object HistoryStorage {
                     o.put("id", e.id)
                     o.put("content", e.content)
                     o.put("timestamp", e.timestamp)
+                    o.put("source", e.source)
                     arr.put(o)
                 }
                 file.writeText(arr.toString())
@@ -60,11 +62,11 @@ object HistoryStorage {
         }
     }
 
-    suspend fun add(context: Context, content: String) {
+    suspend fun add(context: Context, content: String, source: String = "scanned") {
         withContext(Dispatchers.IO) {
             val list = _state.value.toMutableList()
             val id = if (list.isEmpty()) 1L else (list.maxOf { it.id } + 1L)
-            val entry = ScanHistoryItem(id = id, content = content, timestamp = System.currentTimeMillis())
+            val entry = ScanHistoryItem(id = id, content = content, timestamp = System.currentTimeMillis(), source = source)
             list.add(0, entry)
             _state.value = list
             persist(context)

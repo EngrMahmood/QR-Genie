@@ -44,9 +44,7 @@ class ScanResultActivity : ComponentActivity() {
         // Record scan into history (minimal: content + timestamp)
         try {
             lifecycleScope.launch {
-                try {
-                    ScanHistoryRepository.insert(applicationContext, qrText)
-                } catch (_: Exception) {}
+                try { ScanHistoryRepository.insert(applicationContext, qrText, "scanned") } catch (_: Exception) {}
             }
         } catch (_: Exception) {}
         setContent {

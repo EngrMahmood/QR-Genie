@@ -7,6 +7,8 @@ package com.qrgenie.app.data
 data class ScanHistoryItem(
     val id: Long = 0,
     val content: String,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    /** "scanned" or "generated" */
+    val source: String = "scanned"
 )
 

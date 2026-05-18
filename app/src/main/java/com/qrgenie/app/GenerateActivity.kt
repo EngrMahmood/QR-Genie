@@ -121,7 +121,7 @@ fun GenerateScreen() {
                                 // save generated content into history (non-blocking)
                                 try {
                                     coroutineScope.launch {
-                                        try { com.qrgenie.app.data.ScanHistoryRepository.insert(context, text) } catch (_: Exception) {}
+                                        try { com.qrgenie.app.data.ScanHistoryRepository.insert(context, text, "generated") } catch (_: Exception) {}
                                     }
                                 } catch (_: Exception) {}
                             } else {

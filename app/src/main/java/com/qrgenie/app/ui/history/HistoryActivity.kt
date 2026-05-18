@@ -18,6 +18,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -53,14 +55,40 @@ fun HistoryScreen() {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
+    val showClearConfirm = remember { mutableStateOf(false) }
+
     Scaffold(topBar = {
-        TopAppBar(title = { Text("Scan History") })
+        TopAppBar(
+            title = { Text("Scan History") },
+            actions = {
+                IconButton(onClick = { showClearConfirm.value = true }) {
+                    Icon(Icons.Filled.Delete, contentDescription = "Clear all")
+                }
+            }
+        )
     }) { padding ->
         if (items.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Text("No history yet")
             }
             return@Scaffold
+        }
+
+        if (showClearConfirm.value) {
+            AlertDialog(
+                onDismissRequest = { showClearConfirm.value = false },
+                title = { Text("Clear history") },
+                text = { Text("This will permanently delete all history. Are you sure?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showClearConfirm.value = false
+                        coroutineScope.launch { ScanHistoryRepository.clearAll(context) }
+                    }) { Text("Clear") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showClearConfirm.value = false }) { Text("Cancel") }
+                }
+            )
         }
 
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -101,7 +129,16 @@ fun HistoryRow(
             Column(modifier = Modifier.weight(1f)) {
                 Text(item.content, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Spacer(modifier = Modifier.height(6.dp))
-                Text(sdf.format(Date(item.timestamp)), style = MaterialTheme.typography.labelSmall)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(sdf.format(Date(item.timestamp)), style = MaterialTheme.typography.labelSmall)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    // show source label
+                    Text(
+                        text = item.source.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
 
             Column(horizontalAlignment = Alignment.End) {
