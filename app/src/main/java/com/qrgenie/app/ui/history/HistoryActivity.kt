@@ -13,6 +13,8 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -36,14 +38,10 @@ import kotlinx.coroutines.launch
 class HistoryActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Load persisted history into memory before showing UI
         try {
-            // Launch in lifecycle scope to ensure file IO is off the main thread
             lifecycleScope.launch { HistoryStorage.load(this@HistoryActivity) }
         } catch (_: Exception) {}
-        setContent {
-            QRAppTheme { HistoryScreen() }
-        }
+        setContent { QRAppTheme { HistoryScreen() } }
     }
 }
 
@@ -54,19 +52,23 @@ fun HistoryScreen() {
     val items = itemsState
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val showClearConfirm = remember { mutableStateOf(false) }
 
-    Scaffold(topBar = {
-        TopAppBar(
-            title = { Text("Scan History") },
-            actions = {
-                IconButton(onClick = { showClearConfirm.value = true }) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Clear all")
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Scan History") },
+                actions = {
+                    IconButton(onClick = { showClearConfirm.value = true }) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Clear all")
+                    }
                 }
-            }
-        )
-    }) { padding ->
+            )
+        }
+    ) { padding ->
         if (items.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Text("No history yet")
@@ -82,7 +84,14 @@ fun HistoryScreen() {
                 confirmButton = {
                     TextButton(onClick = {
                         showClearConfirm.value = false
+                        val prev = items.toList()
                         coroutineScope.launch { ScanHistoryRepository.clearAll(context) }
+                        coroutineScope.launch {
+                            val result = snackbarHostState.showSnackbar("History cleared", actionLabel = "Undo")
+                            if (result == SnackbarResult.ActionPerformed) {
+                                try { ScanHistoryRepository.restore(context, prev) } catch (_: Exception) {}
+                            }
+                        }
                     }) { Text("Clear") }
                 },
                 dismissButton = {
@@ -126,19 +135,21 @@ fun HistoryRow(
         Row(modifier = Modifier
             .fillMaxWidth()
             .padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+
+            // source icon
+            Icon(
+                imageVector = if (item.source == "generated") Icons.Filled.AutoAwesome else Icons.Filled.QrCodeScanner,
+                contentDescription = item.source,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .size(28.dp)
+                    .padding(end = 8.dp)
+            )
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(item.content, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Spacer(modifier = Modifier.height(6.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(sdf.format(Date(item.timestamp)), style = MaterialTheme.typography.labelSmall)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    // show source label
-                    Text(
-                        text = item.source.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
+                Text(sdf.format(Date(item.timestamp)), style = MaterialTheme.typography.labelSmall)
             }
 
             Column(horizontalAlignment = Alignment.End) {
@@ -149,5 +160,3 @@ fun HistoryRow(
         }
     }
 }
-
-

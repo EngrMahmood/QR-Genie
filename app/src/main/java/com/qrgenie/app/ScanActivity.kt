@@ -114,6 +114,22 @@ fun CameraScanScreen(executor: ExecutorService, onQRCodeDetected: (String) -> Un
     var showConfirmation by remember { mutableStateOf(false) }
     var isFlashOn by remember { mutableStateOf(false) } // Flash State
 
+    // When a QR is detected we show a confirmation overlay briefly then navigate.
+    // The ConfirmationOverlay shows for ~650ms and fades for 300ms (total ~950ms).
+    LaunchedEffect(showConfirmation) {
+        if (showConfirmation && pendingResult != null) {
+            // wait for the confirmation animation to finish
+            kotlinx.coroutines.delay(950)
+            val result = pendingResult
+            // reset UI state (best-effort) before navigating
+            showConfirmation = false
+            pendingResult = null
+            isScanning = false
+            // call the provided callback to navigate to result screen
+            result?.let { onQRCodeDetected(it) }
+        }
+    }
+
     val previewView = remember {
         PreviewView(context).apply {
             implementationMode = PreviewView.ImplementationMode.COMPATIBLE

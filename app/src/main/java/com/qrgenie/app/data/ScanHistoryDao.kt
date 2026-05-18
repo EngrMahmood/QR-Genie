@@ -65,10 +65,25 @@ object HistoryStorage {
     suspend fun add(context: Context, content: String, source: String = "scanned") {
         withContext(Dispatchers.IO) {
             val list = _state.value.toMutableList()
+            // Deduplicate generated entries: skip if the most recent entry is also generated and identical
+            if (source == "generated" && list.isNotEmpty()) {
+                val first = list.first()
+                if (first.source == "generated" && first.content == content) {
+                    // skip adding duplicate generated entry
+                    return@withContext
+                }
+            }
             val id = if (list.isEmpty()) 1L else (list.maxOf { it.id } + 1L)
             val entry = ScanHistoryItem(id = id, content = content, timestamp = System.currentTimeMillis(), source = source)
             list.add(0, entry)
             _state.value = list
+            persist(context)
+        }
+    }
+
+    suspend fun replace(context: Context, newList: List<ScanHistoryItem>) {
+        withContext(Dispatchers.IO) {
+            _state.value = newList
             persist(context)
         }
     }
