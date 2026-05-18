@@ -16,6 +16,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import com.google.zxing.BinaryBitmap
+import com.google.zxing.MultiFormatReader
+import com.google.zxing.RGBLuminanceSource
+import com.google.zxing.common.HybridBinarizer
+import com.google.zxing.DecodeHintType
 
 object QRCodeUtils {
 
@@ -31,9 +36,17 @@ object QRCodeUtils {
 
         return@withContext try {
             val barcodes = Tasks.await(scanner.process(image))
-            barcodes.firstOrNull()?.rawValue
+            val mlResult = barcodes.firstOrNull()?.rawValue
+            // If ML Kit returned a result but it contains replacement characters (e.g. "?")
+            // try a ZXing fallback decode with UTF-8 to preserve Arabic/Urdu and other special characters.
+            if (mlResult != null && mlResult.contains("?") && bitmap != null) {
+                val zxing = decodeBitmapWithZXing(bitmap)
+                if (!zxing.isNullOrEmpty()) return@withContext zxing
+            }
+            mlResult
         } catch (e: Exception) {
-            null
+            // On error with ML Kit, try ZXing fallback
+            decodeBitmapWithZXing(bitmap)
         }
     }
 
@@ -63,6 +76,22 @@ object QRCodeUtils {
                 }
         } else {
             imageProxy.close()
+        }
+    }
+
+    private fun decodeBitmapWithZXing(bitmap: Bitmap): String? {
+        return try {
+            val width = bitmap.width
+            val height = bitmap.height
+            val pixels = IntArray(width * height)
+            bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+            val source = RGBLuminanceSource(width, height, pixels)
+            val binaryBitmap = BinaryBitmap(HybridBinarizer(source))
+            val hints = mapOf(DecodeHintType.CHARACTER_SET to "UTF-8", DecodeHintType.TRY_HARDER to true)
+            val result = MultiFormatReader().apply { setHints(hints) }.decode(binaryBitmap)
+            result.text
+        } catch (e: Exception) {
+            null
         }
     }
 
