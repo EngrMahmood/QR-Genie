@@ -5,6 +5,9 @@ import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import com.qrgenie.app.data.ScanHistoryRepository
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -38,6 +41,14 @@ class ScanResultActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val qrText = intent.getStringExtra(EXTRA_QR_CONTENT) ?: ""
+        // Record scan into history (minimal: content + timestamp)
+        try {
+            lifecycleScope.launch {
+                try {
+                    ScanHistoryRepository.insert(applicationContext, qrText)
+                } catch (_: Exception) {}
+            }
+        } catch (_: Exception) {}
         setContent {
             QRAppTheme {
                 ScanResultScreen(qrText)

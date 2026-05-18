@@ -44,6 +44,8 @@ import com.google.firebase.messaging.FirebaseMessaging
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.IntentSenderRequest
+    import com.qrgenie.app.ui.history.HistoryActivity
+import androidx.compose.material.icons.filled.List
 
 class MainActivity : ComponentActivity() {
     private lateinit var appUpdateManager: AppUpdateManager
@@ -54,6 +56,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Ensure any vendor native libraries extracted into app files are loaded via shim
+        try {
+            NativeShim.ensureLoaded(this)
+        } catch (ignored: Exception) {}
 
         // Initialize Update Manager and check for updates
         appUpdateManager = AppUpdateManagerFactory.create(this)
@@ -231,6 +237,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         // Corrected Share Button with inline logic
+                        Row {
                         Surface(
                             onClick = {
                                 val shareMessage = """
@@ -260,6 +267,18 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Surface(
+                            onClick = { context.startActivity(Intent(context, HistoryActivity::class.java)) },
+                            shape = CircleShape,
+                            color = Color.White.copy(alpha = 0.15f),
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(imageVector = Icons.Default.List, contentDescription = "History", tint = Color.White, modifier = Modifier.size(18.dp))
+                            }
+                        }
                         }
                     }
                 }

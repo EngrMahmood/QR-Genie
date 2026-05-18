@@ -154,6 +154,8 @@ dependencies {
         // Add this line
         implementation("androidx.compose.material:material-icons-extended:1.7.0")
 
+    // (history storage will use file-based storage; keep build without kapt)
+
     // Auto Update
         implementation("com.google.android.play:app-update:2.1.0")
         implementation("com.google.android.play:app-update-ktx:2.1.0")
