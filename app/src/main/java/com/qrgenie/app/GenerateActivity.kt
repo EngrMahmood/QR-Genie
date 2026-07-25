@@ -9,13 +9,17 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.rememberCoroutineScope
@@ -48,10 +52,22 @@ class GenerateActivity : LocalizedComponentActivity() {
     }
 }
 
+private enum class GenerateType { TEXT, WIFI, CONTACT }
+
+private fun escapeWifiField(value: String): String =
+    value.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace(":", "\\:")
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GenerateScreen() {
     var text by rememberSaveable { mutableStateOf("") }
+    var selectedType by rememberSaveable { mutableStateOf(GenerateType.TEXT) }
+    var wifiSsid by rememberSaveable { mutableStateOf("") }
+    var wifiPassword by rememberSaveable { mutableStateOf("") }
+    var wifiOpenNetwork by rememberSaveable { mutableStateOf(false) }
+    var contactName by rememberSaveable { mutableStateOf("") }
+    var contactPhone by rememberSaveable { mutableStateOf("") }
+    var contactEmail by rememberSaveable { mutableStateOf("") }
     var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -99,38 +115,151 @@ fun GenerateScreen() {
         ) {
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Input Field
-
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                label = { Text(stringResource(R.string.enter_text_or_link)) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                // Updated color reference for Material 3
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.secondary,
-                    focusedLabelColor = MaterialTheme.colorScheme.secondary,
-                    cursorColor = MaterialTheme.colorScheme.secondary
+            // QR content type picker - horizontally scrollable so chip labels never wrap
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = selectedType == GenerateType.TEXT,
+                    onClick = { selectedType = GenerateType.TEXT },
+                    label = { Text(stringResource(R.string.qr_type_text), maxLines = 1) },
+                    leadingIcon = { Icon(Icons.Default.TextFields, null, modifier = Modifier.size(18.dp)) }
                 )
+                FilterChip(
+                    selected = selectedType == GenerateType.WIFI,
+                    onClick = { selectedType = GenerateType.WIFI },
+                    label = { Text(stringResource(R.string.qr_type_wifi), maxLines = 1) },
+                    leadingIcon = { Icon(Icons.Default.Wifi, null, modifier = Modifier.size(18.dp)) }
+                )
+                FilterChip(
+                    selected = selectedType == GenerateType.CONTACT,
+                    onClick = { selectedType = GenerateType.CONTACT },
+                    label = { Text(stringResource(R.string.qr_type_contact), maxLines = 1) },
+                    leadingIcon = { Icon(Icons.Default.Person, null, modifier = Modifier.size(18.dp)) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            val fieldColors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.secondary,
+                focusedLabelColor = MaterialTheme.colorScheme.secondary,
+                cursorColor = MaterialTheme.colorScheme.secondary
             )
+
+            when (selectedType) {
+                GenerateType.TEXT -> {
+                    OutlinedTextField(
+                        value = text,
+                        onValueChange = { text = it },
+                        label = { Text(stringResource(R.string.enter_text_or_link)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = fieldColors
+                    )
+                }
+                GenerateType.WIFI -> {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedTextField(
+                            value = wifiSsid,
+                            onValueChange = { wifiSsid = it },
+                            label = { Text(stringResource(R.string.wifi_ssid_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            singleLine = true,
+                            colors = fieldColors
+                        )
+                        if (!wifiOpenNetwork) {
+                            OutlinedTextField(
+                                value = wifiPassword,
+                                onValueChange = { wifiPassword = it },
+                                label = { Text(stringResource(R.string.wifi_password_label)) },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                singleLine = true,
+                                colors = fieldColors
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(checked = wifiOpenNetwork, onCheckedChange = { wifiOpenNetwork = it })
+                            Text(stringResource(R.string.wifi_open_network_label))
+                        }
+                    }
+                }
+                GenerateType.CONTACT -> {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedTextField(
+                            value = contactName,
+                            onValueChange = { contactName = it },
+                            label = { Text(stringResource(R.string.contact_name_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            singleLine = true,
+                            colors = fieldColors
+                        )
+                        OutlinedTextField(
+                            value = contactPhone,
+                            onValueChange = { contactPhone = it },
+                            label = { Text(stringResource(R.string.contact_phone_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            singleLine = true,
+                            colors = fieldColors
+                        )
+                        OutlinedTextField(
+                            value = contactEmail,
+                            onValueChange = { contactEmail = it },
+                            label = { Text(stringResource(R.string.contact_email_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            singleLine = true,
+                            colors = fieldColors
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(20.dp))
 
             // Generate Button
+            val emptyFieldToast = stringResource(R.string.please_enter_some_text)
             Button(
                 onClick = {
-                            if (text.isNotBlank()) {
-                                qrBitmap = generateQRCodeBitmap(text)
-                                // save generated content into history (non-blocking)
-                                try {
-                                    coroutineScope.launch {
-                                        try { ScanHistoryRepository.insert(context, text, "generated") } catch (_: Exception) {}
-                                    }
-                                } catch (_: Exception) {}
-                            } else {
-                                Toast.makeText(context, context.getString(R.string.please_enter_some_text), Toast.LENGTH_SHORT).show()
+                    val content = when (selectedType) {
+                        GenerateType.TEXT -> text
+                        GenerateType.WIFI -> {
+                            if (wifiSsid.isBlank()) "" else {
+                                val enc = if (wifiOpenNetwork) "nopass" else "WPA"
+                                val passPart = if (wifiOpenNetwork) "" else "P:${escapeWifiField(wifiPassword)};"
+                                "WIFI:T:$enc;S:${escapeWifiField(wifiSsid)};$passPart;"
                             }
+                        }
+                        GenerateType.CONTACT -> {
+                            if (contactName.isBlank() && contactPhone.isBlank() && contactEmail.isBlank()) "" else {
+                                buildString {
+                                    append("BEGIN:VCARD\nVERSION:3.0\n")
+                                    if (contactName.isNotBlank()) append("FN:$contactName\n")
+                                    if (contactPhone.isNotBlank()) append("TEL:$contactPhone\n")
+                                    if (contactEmail.isNotBlank()) append("EMAIL:$contactEmail\n")
+                                    append("END:VCARD")
+                                }
+                            }
+                        }
+                    }
+                    if (content.isNotBlank()) {
+                        qrBitmap = generateQRCodeBitmap(content)
+                        // save generated content into history (non-blocking)
+                        try {
+                            coroutineScope.launch {
+                                try { ScanHistoryRepository.insert(context, content, "generated") } catch (_: Exception) {}
+                            }
+                        } catch (_: Exception) {}
+                    } else {
+                        Toast.makeText(context, emptyFieldToast, Toast.LENGTH_SHORT).show()
+                    }
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),

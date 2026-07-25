@@ -16,8 +16,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.OptIn
 import androidx.camera.core.*
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import java.util.concurrent.atomic.AtomicLong
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -123,8 +126,12 @@ fun CameraScanScreen(executor: ExecutorService, onQRCodeDetected: (String) -> Un
     var camera by remember { mutableStateOf<Camera?>(null) }
     var lensFacing by remember { mutableStateOf(CameraSelector.LENS_FACING_BACK) }
     var isScanning by remember { mutableStateOf(true) }
-    // Simple debounce to avoid duplicate detections within short window
-    var lastDetectedTime by remember { mutableStateOf(0L) }
+    // Simple debounce to avoid duplicate detections within short window.
+    // Backed by an AtomicLong (not Compose state) since it's read/written from both
+    // the Compose main thread and the analyzer's background executor thread - plain
+    // mutableStateOf snapshot writes aren't guaranteed to be visible cross-thread
+    // immediately, which could rarely cause a missed detection right at the debounce edge.
+    val lastDetectedTime = remember { AtomicLong(0L) }
     // Hold a pending detected result so we can show a short confirmation before navigating
     var pendingResult by remember { mutableStateOf<String?>(null) }
     var showConfirmation by remember { mutableStateOf(false) }
@@ -177,17 +184,26 @@ fun CameraScanScreen(executor: ExecutorService, onQRCodeDetected: (String) -> Un
 
         val analysis = ImageAnalysis.Builder()
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-            // Set default resolution (leave to system) - removed deprecated setTargetResolution
+            // Pin a consistent analysis resolution instead of leaving it to the system
+            // default, which varies by device and affects how reliably small/far QR
+            // codes get decoded.
+            .setResolutionSelector(
+                ResolutionSelector.Builder()
+                    .setResolutionStrategy(
+                        ResolutionStrategy(android.util.Size(1280, 720), ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)
+                    )
+                    .build()
+            )
             .build()
             .also {
                 it.setAnalyzer(executor) { imageProxy ->
                     val now = System.currentTimeMillis()
                     // Respect scanning flag and debounce window (1s)
-                    if (isScanning && now - lastDetectedTime > 1000L) {
+                    if (isScanning && now - lastDetectedTime.get() > 1000L) {
                         try {
                             QRCodeUtils.scanImageProxy(imageProxy) { result ->
                                 if (result != null) {
-                                    lastDetectedTime = System.currentTimeMillis()
+                                    lastDetectedTime.set(System.currentTimeMillis())
                                     isScanning = false
                                     pendingResult = result
                                     showConfirmation = true

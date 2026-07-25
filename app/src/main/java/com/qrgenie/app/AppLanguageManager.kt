@@ -1,48 +1,41 @@
 package com.qrgenie.app
 
-import android.content.Context
-import android.content.ContextWrapper
-import android.content.SharedPreferences
-import android.content.res.Configuration
-import android.os.Build
-import android.os.LocaleList
-import java.util.Locale
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 
 object AppLanguageManager {
-    private const val PREFS_NAME = "app_language_prefs"
-    private const val KEY_LANGUAGE_TAG = "language_tag"
     private const val DEFAULT_LANGUAGE_TAG = "en"
 
-    fun getSavedLanguageTag(context: Context): String {
-        return prefs(context).getString(KEY_LANGUAGE_TAG, DEFAULT_LANGUAGE_TAG) ?: DEFAULT_LANGUAGE_TAG
+    /**
+     * AppCompatDelegate is the single source of truth for the selected language -
+     * backed by the platform LocaleManager on API 33+ and AppCompat's own storage
+     * below that. Previously this app *also* kept a manually-applied Configuration
+     * override via attachBaseContext, sourced from a separate SharedPreferences copy.
+     * On API 33+ with android:localeConfig declared, the OS manages per-app locale
+     * itself; the manual override raced with it (attachBaseContext ran before the
+     * OS's own locale change had propagated back through getApplicationLocales()),
+     * so the app kept reverting to English. Removing the manual override and
+     * relying purely on setApplicationLocales()/getApplicationLocales() avoids that
+     * race entirely.
+     */
+    fun getCurrentLanguageTag(): String {
+        val locales = AppCompatDelegate.getApplicationLocales()
+        return if (!locales.isEmpty) locales[0]?.toLanguageTag() ?: DEFAULT_LANGUAGE_TAG else DEFAULT_LANGUAGE_TAG
     }
 
-    fun saveLanguageTag(context: Context, tag: String) {
-        prefs(context).edit().putString(KEY_LANGUAGE_TAG, tag).apply()
-    }
-
-    fun wrapContext(base: Context): ContextWrapper {
-        val tag = getSavedLanguageTag(base)
-        val locale = Locale.forLanguageTag(tag)
-        Locale.setDefault(locale)
-
-        val config = Configuration(base.resources.configuration)
-        config.setLocale(locale)
-        config.setLayoutDirection(locale)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            config.setLocales(LocaleList(locale))
-        }
-        return ContextWrapper(base.createConfigurationContext(config))
-    }
-
-    private fun prefs(context: Context): SharedPreferences {
-        return context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    fun applyLanguageTag(tag: String) {
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag))
     }
 }
 
-open class LocalizedComponentActivity : androidx.activity.ComponentActivity() {
-    override fun attachBaseContext(newBase: Context) {
-        super.attachBaseContext(AppLanguageManager.wrapContext(newBase))
-    }
-}
-
+/**
+ * Must extend AppCompatActivity (not plain ComponentActivity): AppCompatDelegate's
+ * per-app-language mechanism - both the API 33+ framework LocaleManager bridge and
+ * the automatic Activity recreation on locale change - only engages for Activities
+ * that create an AppCompatDelegate instance. Without this, setApplicationLocales()
+ * silently no-ops (confirmed on-device: `cmd locale get-app-locales` stayed empty
+ * after selecting a language). Theme.QRAPP was updated to extend
+ * Theme.AppCompat.Light.NoActionBar to support this (AppCompatActivity requires an
+ * AppCompat/MaterialComponents theme or it throws at runtime).
+ */
+open class LocalizedComponentActivity : androidx.appcompat.app.AppCompatActivity()

@@ -23,12 +23,17 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.TextSnippet
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -45,6 +50,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -61,6 +67,40 @@ import androidx.lifecycle.lifecycleScope
 import com.qrgenie.app.data.ScanHistoryRepository
 import com.qrgenie.app.ui.theme.QRAppTheme
 import kotlinx.coroutines.launch
+
+private fun connectToWifi(
+    context: android.content.Context,
+    wifi: QrContentType.Wifi,
+    connectingMessage: String,
+    openedSettingsMessage: String
+) {
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+        try {
+            val suggestionBuilder = android.net.wifi.WifiNetworkSuggestion.Builder()
+                .setSsid(wifi.ssid)
+            if (!wifi.password.isNullOrEmpty() && !wifi.encryption.equals("nopass", ignoreCase = true)) {
+                suggestionBuilder.setWpa2Passphrase(wifi.password)
+            }
+            val suggestion = suggestionBuilder.build()
+            val wifiManager = context.applicationContext.getSystemService(android.net.wifi.WifiManager::class.java)
+            wifiManager.addNetworkSuggestions(listOf(suggestion))
+            Toast.makeText(context, connectingMessage, Toast.LENGTH_SHORT).show()
+            return
+        } catch (_: Exception) {
+            // fall through to settings fallback below
+        }
+    }
+    // Pre-Q, or if the suggestion API failed: copy the password and open Wi-Fi settings
+    // so the user can connect manually - programmatic connect isn't reliably available otherwise.
+    try {
+        val clipboard = context.getSystemService(android.content.ClipboardManager::class.java)
+        clipboard?.setPrimaryClip(android.content.ClipData.newPlainText("wifi_password", wifi.password ?: ""))
+    } catch (_: Exception) {}
+    try {
+        context.startActivity(Intent(android.provider.Settings.ACTION_WIFI_SETTINGS))
+        Toast.makeText(context, openedSettingsMessage, Toast.LENGTH_LONG).show()
+    } catch (_: Exception) {}
+}
 
 class ScanResultActivity : LocalizedComponentActivity() {
     companion object {
@@ -84,13 +124,8 @@ class ScanResultActivity : LocalizedComponentActivity() {
 fun ScanResultScreen(qrText: String) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
-    val isUrl = try {
-        val uri = qrText.toUri()
-        val scheme = uri.scheme?.lowercase()
-        scheme == "http" || scheme == "https"
-    } catch (_: Exception) {
-        false
-    }
+    val contentType = remember(qrText) { QrContentParser.parse(qrText) }
+    val isUrl = contentType is QrContentType.Url
 
     val invalidLinkStr = stringResource(R.string.invalid_link)
     val copyLabel = stringResource(R.string.copy_label)
@@ -133,8 +168,16 @@ fun ScanResultScreen(qrText: String) {
             Spacer(modifier = Modifier.height(20.dp))
 
             Icon(
-                imageVector = if (isUrl) Icons.Filled.Language else Icons.Filled.TextSnippet,
-                contentDescription = if (isUrl) stringResource(R.string.open_magic_link) else stringResource(R.string.copy_label),
+                imageVector = when (contentType) {
+                    is QrContentType.Url -> Icons.Filled.Language
+                    is QrContentType.Wifi -> Icons.Filled.Wifi
+                    is QrContentType.Contact -> Icons.Filled.PersonAdd
+                    is QrContentType.Email -> Icons.Filled.Email
+                    is QrContentType.Phone -> Icons.Filled.Call
+                    is QrContentType.Sms -> Icons.Filled.Message
+                    is QrContentType.PlainText -> Icons.Filled.TextSnippet
+                },
+                contentDescription = null,
                 modifier = Modifier.size(80.dp),
                 tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
             )
@@ -203,31 +246,131 @@ fun ScanResultScreen(qrText: String) {
                 }
             }
 
-            if (isUrl) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = {
-                        try {
-                            val uri = qrText.toUri()
-                            val scheme = uri.scheme?.lowercase()
-                            if (scheme == "http" || scheme == "https") {
-                                val intent = Intent(Intent.ACTION_VIEW, uri)
-                                context.startActivity(intent)
-                            } else {
+            when (contentType) {
+                is QrContentType.Url -> {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = {
+                            try {
+                                val uri = qrText.toUri()
+                                val scheme = uri.scheme?.lowercase()
+                                if (scheme == "http" || scheme == "https") {
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                                } else {
+                                    Toast.makeText(context, invalidLinkStr, Toast.LENGTH_SHORT).show()
+                                }
+                            } catch (_: Exception) {
                                 Toast.makeText(context, invalidLinkStr, Toast.LENGTH_SHORT).show()
                             }
-                        } catch (_: Exception) {
-                            Toast.makeText(context, invalidLinkStr, Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
-                ) {
-                    Icon(Icons.Filled.OpenInNew, contentDescription = openMagicLabel)
-                    Spacer(Modifier.width(8.dp))
-                    Text(openMagicLabel)
+                        },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                    ) {
+                        Icon(Icons.Filled.OpenInNew, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(openMagicLabel)
+                    }
                 }
+                is QrContentType.Wifi -> {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    val connectingMsg = stringResource(R.string.wifi_connect_requested, contentType.ssid)
+                    val openedSettingsMsg = stringResource(R.string.wifi_connect_opened_settings)
+                    Button(
+                        onClick = { connectToWifi(context, contentType, connectingMsg, openedSettingsMsg) },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                    ) {
+                        Icon(Icons.Filled.Wifi, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.connect_wifi))
+                    }
+                }
+                is QrContentType.Contact -> {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_INSERT_OR_EDIT).apply {
+                                type = android.provider.ContactsContract.Contacts.CONTENT_ITEM_TYPE
+                                contentType.name?.let { putExtra(android.provider.ContactsContract.Intents.Insert.NAME, it) }
+                                contentType.phone?.let { putExtra(android.provider.ContactsContract.Intents.Insert.PHONE, it) }
+                                contentType.email?.let { putExtra(android.provider.ContactsContract.Intents.Insert.EMAIL, it) }
+                            }
+                            try { context.startActivity(intent) } catch (_: Exception) {
+                                Toast.makeText(context, invalidLinkStr, Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                    ) {
+                        Icon(Icons.Filled.PersonAdd, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.add_contact))
+                    }
+                }
+                is QrContentType.Email -> {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                data = "mailto:${contentType.address}".toUri()
+                                contentType.subject?.let { putExtra(Intent.EXTRA_SUBJECT, it) }
+                                contentType.body?.let { putExtra(Intent.EXTRA_TEXT, it) }
+                            }
+                            try { context.startActivity(intent) } catch (_: Exception) {
+                                Toast.makeText(context, invalidLinkStr, Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                    ) {
+                        Icon(Icons.Filled.Email, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.send_email))
+                    }
+                }
+                is QrContentType.Phone -> {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_DIAL, "tel:${contentType.number}".toUri())
+                            try { context.startActivity(intent) } catch (_: Exception) {
+                                Toast.makeText(context, invalidLinkStr, Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                    ) {
+                        Icon(Icons.Filled.Call, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.call_number, contentType.number))
+                    }
+                }
+                is QrContentType.Sms -> {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_SENDTO, "smsto:${contentType.number}".toUri()).apply {
+                                contentType.body?.let { putExtra("sms_body", it) }
+                            }
+                            try { context.startActivity(intent) } catch (_: Exception) {
+                                Toast.makeText(context, invalidLinkStr, Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                    ) {
+                        Icon(Icons.Filled.Message, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.send_sms))
+                    }
+                }
+                is QrContentType.PlainText -> {}
             }
 
             Spacer(modifier = Modifier.height(16.dp))

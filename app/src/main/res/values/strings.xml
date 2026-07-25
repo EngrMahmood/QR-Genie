@@ -37,6 +37,35 @@
     <string name="scan_magic_qr">SCAN MAGIC QR</string>
     <string name="scan_result_title">SCAN RESULT</string>
     <string name="decoded_content_label">DECODED CONTENT</string>
+    <string name="connect_wifi">Connect to Wi-Fi</string>
+    <string name="wifi_network_label">Wi-Fi network</string>
+    <string name="wifi_password_label">Password</string>
+    <string name="wifi_connect_opened_settings">Opened Wi-Fi settings — password copied to clipboard</string>
+    <string name="wifi_connect_requested">Connecting to %1$s…</string>
+    <string name="add_contact">Add contact</string>
+    <string name="contact_label">Contact</string>
+    <string name="call_number">Call %1$s</string>
+    <string name="send_email">Send email</string>
+    <string name="send_sms">Send SMS</string>
+    <string name="qr_type_text">Text</string>
+    <string name="qr_type_wifi">Wi-Fi</string>
+    <string name="qr_type_contact">Contact</string>
+    <string name="wifi_ssid_label">Network name (SSID)</string>
+    <string name="wifi_open_network_label">Open network (no password)</string>
+    <string name="contact_name_label">Name</string>
+    <string name="contact_phone_label">Phone</string>
+    <string name="contact_email_label">Email</string>
+    <string name="settings_title">SETTINGS</string>
+    <string name="settings_language_section">Language</string>
+    <string name="settings_theme_section">Theme</string>
+    <string name="theme_system">Follow system</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="settings_about_section">About</string>
+    <string name="settings_version_label">Version</string>
+    <string name="settings_privacy_policy">Privacy policy</string>
+    <string name="settings_rate_app">Rate QR Genie</string>
+    <string name="settings_label">Settings</string>
     <string name="flash_label">Flash</string>
     <string name="back_label">Back</string>
     <string name="clear_all">Clear all</string>
@@ -51,5 +80,8 @@
     <string name="delete">Delete</string>
     <string name="source_generated">Generated</string>
     <string name="source_scanned">Scanned</string>
+    <string name="search_history_hint">Search history</string>
+    <string name="filter_all">All</string>
+    <string name="no_matching_history">No matching history</string>
 
 </resources>

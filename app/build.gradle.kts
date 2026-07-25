@@ -16,8 +16,8 @@ android {
         // Bump versionCode when publishing new bundles and update versionName accordingly.
         // Increment versionCode and versionName for Play Store update
         // Bump when publishing new bundles and update versionName accordingly.
-        versionCode = 9 // bumped for Play release
-        versionName = "1.0.7"
+        versionCode = 10 // bumped for Play release
+        versionName = "1.0.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

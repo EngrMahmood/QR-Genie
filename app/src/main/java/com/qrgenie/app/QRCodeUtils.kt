@@ -31,11 +31,19 @@ import java.io.ByteArrayOutputStream
 import android.graphics.Matrix
 import android.util.Log
 import com.google.zxing.PlanarYUVLuminanceSource
+import java.util.concurrent.atomic.AtomicInteger
 
 @OptIn(ExperimentalGetImage::class)
 object QRCodeUtils {
 
     private const val TAG = "QRCodeUtils"
+
+    // The bitmap/JPEG ZXing fallback (imageProxyToBitmap + decodeBitmapWithZXing) is expensive
+    // (JPEG compression + full HybridBinarizer pass) and running it on every failed frame stalls
+    // the single-thread camera analyzer, making the scanner appear to "stop working" under poor
+    // conditions. Only attempt it once every few consecutive YUV-decode failures.
+    private const val BITMAP_FALLBACK_EVERY_N_FAILURES = 3
+    private val consecutiveYuvFailures = AtomicInteger(0)
 
     /**
      * Used by ScanActivity for Gallery images
@@ -95,22 +103,29 @@ object QRCodeUtils {
                         // try ZXing decode directly from the ImageProxy YUV planes (faster, avoids JPEG conversion)
                         val zFromYuv = decodeImageProxyWithZXing(imageProxy)
                         if (!zFromYuv.isNullOrEmpty()) {
+                            consecutiveYuvFailures.set(0)
                             Log.d(TAG, "ZXing(YUV) succeeded: ${toCodePointsString(zFromYuv)}")
                             onDetected(zFromYuv)
                         } else {
-                            // fallback to bitmap-based ZXing decode (slower) if direct YUV decode failed
-                            val bmp = imageProxyToBitmap(imageProxy)
-                            if (bmp != null) {
-                                val z = decodeBitmapWithZXing(bmp)
-                                if (!z.isNullOrEmpty()) {
-                                    Log.d(TAG, "ZXing(Bitmap) succeeded: ${toCodePointsString(z)}")
-                                    onDetected(z)
-                                } else if (result != null) {
-                                    Log.d(TAG, "Using ML Kit fallback result (may be garbled): ${result}")
-                                    // fallback to ML Kit result even if it contained '?'
-                                    onDetected(result)
+                            // The bitmap/JPEG fallback is much heavier than the YUV path above; only
+                            // run it periodically so a run of unreadable frames (glare, tilt, low light)
+                            // doesn't stall the analyzer thread and make scanning look stuck.
+                            val failures = consecutiveYuvFailures.incrementAndGet()
+                            val shouldTryBitmapFallback = failures % BITMAP_FALLBACK_EVERY_N_FAILURES == 0
+                            var z: String? = null
+                            if (shouldTryBitmapFallback) {
+                                val bmp = imageProxyToBitmap(imageProxy)
+                                if (bmp != null) {
+                                    z = decodeBitmapWithZXing(bmp)
                                 }
+                            }
+                            if (!z.isNullOrEmpty()) {
+                                consecutiveYuvFailures.set(0)
+                                Log.d(TAG, "ZXing(Bitmap) succeeded: ${toCodePointsString(z)}")
+                                onDetected(z)
                             } else if (result != null) {
+                                Log.d(TAG, "Using ML Kit fallback result (may be garbled): ${result}")
+                                // fallback to ML Kit result even if it contained '?'
                                 onDetected(result)
                             }
                         }

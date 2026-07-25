@@ -15,9 +15,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -36,14 +35,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.util.Locale
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.InstallStateUpdatedListener
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
-import com.qrgenie.app.ui.theme.OnSecondary
 import com.qrgenie.app.ui.theme.QRAppTheme
 import com.qrgenie.app.ui.theme.Secondary
 import com.google.firebase.messaging.FirebaseMessaging
@@ -52,35 +49,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.IntentSenderRequest
     import com.qrgenie.app.ui.history.HistoryActivity
 import androidx.compose.material.icons.filled.List
-
-private data class AppLanguageOption(val tag: String, val label: String)
-
-private val APP_LANGUAGES = listOf(
-    AppLanguageOption("en", "English"),
-    AppLanguageOption("ar", "العربية"),
-    AppLanguageOption("ur", "اردو"),
-    AppLanguageOption("hi", "हिंदी"),
-    AppLanguageOption("bn", "বাংলা"),
-    AppLanguageOption("pa", "ਪੰਜਾਬੀ"),
-    AppLanguageOption("fa", "فارسی"),
-    AppLanguageOption("tr", "Türkçe"),
-    AppLanguageOption("fr", "Français"),
-    AppLanguageOption("de", "Deutsch"),
-    AppLanguageOption("es", "Español"),
-    AppLanguageOption("pt", "Português"),
-    AppLanguageOption("it", "Italiano"),
-    AppLanguageOption("nl", "Nederlands"),
-    AppLanguageOption("ru", "Русский"),
-    AppLanguageOption("zh", "中文"),
-    AppLanguageOption("ja", "日本語"),
-    AppLanguageOption("ko", "한국어"),
-    AppLanguageOption("th", "ไทย"),
-    AppLanguageOption("vi", "Tiếng Việt"),
-    AppLanguageOption("id", "Bahasa Indonesia"),
-    AppLanguageOption("ms", "Bahasa Melayu"),
-    AppLanguageOption("sw", "Kiswahili"),
-    AppLanguageOption("am", "አማርኛ")
-)
 
 class MainActivity : LocalizedComponentActivity() {
     private lateinit var appUpdateManager: AppUpdateManager
@@ -198,10 +166,6 @@ class MainActivity : LocalizedComponentActivity() {
     fun HomeScreen(onScan: () -> Unit, onGenerate: () -> Unit) {
         val context = LocalContext.current
         val shareChooserTitle = stringResource(R.string.share_chooser_title)
-                val appLanguages = remember { APP_LANGUAGES }
-                var languageMenuExpanded by remember { mutableStateOf(false) }
-                var currentLocaleTag by remember { mutableStateOf(AppLanguageManager.getSavedLanguageTag(context)) }
-                val currentLanguage = appLanguages.firstOrNull { it.tag == currentLocaleTag } ?: appLanguages.first()
 
         // Version fetch logic
         val appVersion = remember(context) {
@@ -314,61 +278,14 @@ class MainActivity : LocalizedComponentActivity() {
                             }
                         }
                         Spacer(modifier = Modifier.width(10.dp))
-                        Box {
-                            Surface(
-                                onClick = { languageMenuExpanded = true },
-                                shape = RoundedCornerShape(20.dp),
-                                color = Color.White.copy(alpha = 0.15f),
-                                modifier = Modifier.height(40.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Language,
-                                        contentDescription = stringResource(R.string.language_label),
-                                        tint = Color.White,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Text(
-                                        text = currentLanguage.tag.uppercase(Locale.ROOT),
-                                        color = Color.White,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                            DropdownMenu(
-                                expanded = languageMenuExpanded,
-                                onDismissRequest = { languageMenuExpanded = false }
-                            ) {
-                                appLanguages.forEach { option ->
-                                    DropdownMenuItem(
-                                        text = {
-                                            Column {
-                                                Text(option.label)
-                                                Text(
-                                                    option.tag.uppercase(Locale.ROOT),
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.outline
-                                                )
-                                            }
-                                        },
-                                        trailingIcon = {
-                                            if (option.tag == currentLocaleTag) {
-                                                Icon(Icons.Default.Check, contentDescription = null)
-                                            }
-                                        },
-                                        onClick = {
-                                            AppLanguageManager.saveLanguageTag(context, option.tag)
-                                            currentLocaleTag = option.tag
-                                            languageMenuExpanded = false
-                                            (context as? ComponentActivity)?.recreate()
-                                        }
-                                    )
-                                }
+                        Surface(
+                            onClick = { context.startActivity(Intent(context, SettingsActivity::class.java)) },
+                            shape = CircleShape,
+                            color = Color.White.copy(alpha = 0.15f),
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(imageVector = Icons.Default.Settings, contentDescription = stringResource(R.string.settings_label), tint = Color.White, modifier = Modifier.size(18.dp))
                             }
                         }
                         }
@@ -405,8 +322,7 @@ class MainActivity : LocalizedComponentActivity() {
                     title = stringResource(R.string.home_scan_title),
                     subtitle = stringResource(R.string.home_scan_subtitle),
                     icon = Icons.Default.QrCodeScanner,
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    accentColor = MaterialTheme.colorScheme.primary,
                     onClick = onScan
                 )
 
@@ -414,8 +330,7 @@ class MainActivity : LocalizedComponentActivity() {
                     title = stringResource(R.string.home_generate_title),
                     subtitle = stringResource(R.string.home_generate_subtitle),
                     icon = Icons.Default.AddCircle,
-                    containerColor = Secondary,
-                    contentColor = OnSecondary,
+                    accentColor = Secondary,
                     onClick = onGenerate
                 )
 
@@ -435,48 +350,58 @@ class MainActivity : LocalizedComponentActivity() {
         title: String,
         subtitle: String,
         icon: ImageVector,
-        containerColor: Color, // Changed type to Color
-        contentColor: Color,   // Changed type to Color
+        accentColor: Color,
         onClick: () -> Unit
     ) {
         // 1. Get the haptic feedback manager
         val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
-        ElevatedCard(
+        // Neutral card surface with the brand color pulled back to the icon chip only -
+        // keeps the bold blue/green identity as an accent instead of a full-bleed fill.
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(110.dp)
+                .height(104.dp)
                 .clickable {
                     // 2. Perform vibration
                     haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                     // 3. Execute the click action
                     onClick()
                            },
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.elevatedCardColors(
-                containerColor = containerColor,
-                contentColor = contentColor
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface
             ),
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(20.dp),
+                    .padding(18.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(40.dp))
+                Surface(
+                    modifier = Modifier.size(52.dp),
+                    color = accentColor.copy(alpha = 0.12f),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(imageVector = icon, contentDescription = null, tint = accentColor, modifier = Modifier.size(26.dp))
+                    }
+                }
                 Column {
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = contentColor.copy(alpha = 0.8f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
