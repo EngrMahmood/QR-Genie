@@ -60,7 +60,8 @@ private val SETTINGS_LANGUAGES = listOf(
     SettingsLanguageOption("fr", "Français"),
     SettingsLanguageOption("de", "Deutsch"),
     SettingsLanguageOption("es", "Español"),
-    SettingsLanguageOption("zh", "中文")
+    SettingsLanguageOption("zh", "中文"),
+    SettingsLanguageOption("fil", "Filipino")
 )
 
 private const val PRIVACY_POLICY_URL = "https://sites.google.com/view/qrgenieprivacypolicy/home"

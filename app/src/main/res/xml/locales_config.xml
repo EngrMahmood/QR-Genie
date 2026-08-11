@@ -11,5 +11,6 @@
     <locale android:name="fa" />
     <locale android:name="bn" />
     <locale android:name="zh" />
+    <locale android:name="fil" />
 </locale-config>
 

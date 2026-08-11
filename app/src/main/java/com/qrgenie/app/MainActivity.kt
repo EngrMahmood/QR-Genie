@@ -68,6 +68,9 @@ class MainActivity : LocalizedComponentActivity() {
         appUpdateManager = AppUpdateManagerFactory.create(this)
         checkForUpdates()
 
+        // Request UMP consent (GDPR) and initialize AdMob once consent is settled
+        AdsManager.initializeAndRequestConsent(this)
+
         // Subscribe to release notifications topic (optional - requires Firebase setup)
         try {
             FirebaseMessaging.getInstance().subscribeToTopic("releases")
@@ -204,7 +207,10 @@ class MainActivity : LocalizedComponentActivity() {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            modifier = Modifier.weight(1f, fill = false),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Surface(
                                 modifier = Modifier.size(44.dp),
                                 color = Color.White.copy(alpha = 0.2f),
@@ -219,14 +225,16 @@ class MainActivity : LocalizedComponentActivity() {
 
                             Spacer(modifier = Modifier.width(14.dp))
 
-                            Column {
+                            Column(modifier = Modifier.weight(1f, fill = false)) {
                                 Text(
                                     text = stringResource(R.string.app_name),
                                     style = MaterialTheme.typography.titleLarge.copy(
                                         fontWeight = FontWeight.Black,
                                         letterSpacing = 2.sp,
                                         color = Color.White
-                                    )
+                                    ),
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                 )
                                 Text(
                                     text = stringResource(R.string.home_tagline),
@@ -234,10 +242,14 @@ class MainActivity : LocalizedComponentActivity() {
                                         color = Color.White.copy(alpha = 0.6f),
                                         letterSpacing = 1.5.sp,
                                         fontWeight = FontWeight.Bold
-                                    )
+                                    ),
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                 )
                             }
                         }
+
+                        Spacer(modifier = Modifier.width(8.dp))
 
                         // Corrected Share Button with inline logic
                         Row {
@@ -296,7 +308,13 @@ class MainActivity : LocalizedComponentActivity() {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
+                    .padding(paddingValues),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
                     .padding(horizontal = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -341,6 +359,9 @@ class MainActivity : LocalizedComponentActivity() {
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.outlineVariant
                 )
+            }
+
+            BannerAd(modifier = Modifier.padding(bottom = 12.dp))
             }
         }
     }

@@ -6,8 +6,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -28,6 +30,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -70,9 +74,11 @@ fun HistoryScreen() {
     val showClearConfirm = remember { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var sourceFilter by rememberSaveable { mutableStateOf<String?>(null) }
+    var showFavoritesOnly by rememberSaveable { mutableStateOf(false) }
 
     val items = itemsState.filter { item ->
         (sourceFilter == null || item.source == sourceFilter) &&
+            (!showFavoritesOnly || item.isFavorite) &&
             (searchQuery.isBlank() || item.content.contains(searchQuery, ignoreCase = true))
     }
 
@@ -161,7 +167,10 @@ fun HistoryScreen() {
             )
 
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 FilterChip(
@@ -178,6 +187,12 @@ fun HistoryScreen() {
                     selected = sourceFilter == "generated",
                     onClick = { sourceFilter = "generated" },
                     label = { Text(stringResource(R.string.source_generated)) }
+                )
+                FilterChip(
+                    selected = showFavoritesOnly,
+                    onClick = { showFavoritesOnly = !showFavoritesOnly },
+                    label = { Text(stringResource(R.string.favorites_label)) },
+                    leadingIcon = { Icon(Icons.Filled.Star, contentDescription = null, modifier = androidx.compose.ui.Modifier.size(18.dp)) }
                 )
             }
 
@@ -203,6 +218,8 @@ fun HistoryScreen() {
                     context.startActivity(Intent.createChooser(send, context.getString(R.string.share_label)))
                 }, onDelete = {
                     coroutineScope.launch { ScanHistoryRepository.delete(context, it) }
+                }, onToggleFavorite = {
+                    coroutineScope.launch { ScanHistoryRepository.toggleFavorite(context, it) }
                 })
             }
         }
@@ -215,7 +232,8 @@ fun HistoryRow(
     item: com.qrgenie.app.data.ScanHistoryItem,
     onOpen: () -> Unit,
     onShare: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onToggleFavorite: () -> Unit
 ) {
     val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
     Card(modifier = Modifier
@@ -242,6 +260,13 @@ fun HistoryRow(
             }
 
             Column(horizontalAlignment = Alignment.End) {
+                IconButton(onClick = onToggleFavorite) {
+                    Icon(
+                        imageVector = if (item.isFavorite) Icons.Filled.Star else Icons.Filled.StarBorder,
+                        contentDescription = stringResource(R.string.favorites_label),
+                        tint = if (item.isFavorite) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline
+                    )
+                }
                 IconButton(onClick = onOpen) { Icon(Icons.Filled.OpenInNew, contentDescription = stringResource(R.string.open)) }
                 IconButton(onClick = onShare) { Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.share_label)) }
                 IconButton(onClick = onDelete) { Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.delete)) }

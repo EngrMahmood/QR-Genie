@@ -35,7 +35,8 @@ object HistoryStorage {
                     val content = o.optString("content", "")
                     val ts = o.optLong("timestamp", 0L)
                     val source = o.optString("source", "scanned")
-                    list.add(ScanHistoryItem(id = id, content = content, timestamp = ts, source = source))
+                    val isFavorite = o.optBoolean("isFavorite", false)
+                    list.add(ScanHistoryItem(id = id, content = content, timestamp = ts, source = source, isFavorite = isFavorite))
                 }
                 _state.value = list
             } catch (_: Exception) {
@@ -55,6 +56,7 @@ object HistoryStorage {
                     o.put("content", e.content)
                     o.put("timestamp", e.timestamp)
                     o.put("source", e.source)
+                    o.put("isFavorite", e.isFavorite)
                     arr.put(o)
                 }
                 file.writeText(arr.toString())
@@ -100,6 +102,16 @@ object HistoryStorage {
     suspend fun clear(context: Context) {
         withContext(Dispatchers.IO) {
             _state.value = emptyList()
+            persist(context)
+        }
+    }
+
+    suspend fun toggleFavorite(context: Context, entry: ScanHistoryItem) {
+        withContext(Dispatchers.IO) {
+            val list = _state.value.map {
+                if (it.id == entry.id) it.copy(isFavorite = !it.isFavorite) else it
+            }
+            _state.value = list
             persist(context)
         }
     }

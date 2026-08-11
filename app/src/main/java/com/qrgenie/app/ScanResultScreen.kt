@@ -22,7 +22,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Email
@@ -67,6 +69,14 @@ import androidx.lifecycle.lifecycleScope
 import com.qrgenie.app.data.ScanHistoryRepository
 import com.qrgenie.app.ui.theme.QRAppTheme
 import kotlinx.coroutines.launch
+
+@Composable
+private fun BankDetailRow(label: String, value: String) {
+    Column {
+        Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+        Text(text = value, style = MaterialTheme.typography.bodyLarge)
+    }
+}
 
 private fun connectToWifi(
     context: android.content.Context,
@@ -115,6 +125,7 @@ class ScanResultActivity : LocalizedComponentActivity() {
                 try { ScanHistoryRepository.insert(applicationContext, qrText, "scanned") } catch (_: Exception) {}
             }
         } catch (_: Exception) {}
+        ReviewManager.maybePromptReview(this)
         setContent { QRAppTheme { ScanResultScreen(qrText) } }
     }
 }
@@ -175,6 +186,8 @@ fun ScanResultScreen(qrText: String) {
                     is QrContentType.Email -> Icons.Filled.Email
                     is QrContentType.Phone -> Icons.Filled.Call
                     is QrContentType.Sms -> Icons.Filled.Message
+                    is QrContentType.BankAccount -> Icons.Filled.AccountBalance
+                    is QrContentType.Binary -> Icons.Filled.BrokenImage
                     is QrContentType.PlainText -> Icons.Filled.TextSnippet
                 },
                 contentDescription = null,
@@ -191,58 +204,107 @@ fun ScanResultScreen(qrText: String) {
                 elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp)
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
-                    Text(
-                        text = stringResource(R.string.decoded_content_label),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    SelectionContainer {
+                    if (contentType is QrContentType.BankAccount) {
                         Text(
-                            text = qrText,
-                            style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
-                            textAlign = TextAlign.Start
+                            text = stringResource(R.string.bank_account_label),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
                         )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        SelectionContainer {
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                if (!contentType.bankName.isNullOrBlank()) {
+                                    BankDetailRow(stringResource(R.string.bank_name_label), contentType.bankName)
+                                }
+                                if (!contentType.accountTitle.isNullOrBlank()) {
+                                    BankDetailRow(stringResource(R.string.bank_account_title_label), contentType.accountTitle)
+                                }
+                                if (!contentType.accountNumber.isNullOrBlank()) {
+                                    BankDetailRow(stringResource(R.string.bank_account_number_label), contentType.accountNumber)
+                                }
+                                if (!contentType.iban.isNullOrBlank()) {
+                                    BankDetailRow(stringResource(R.string.bank_iban_label), contentType.iban)
+                                }
+                            }
+                        }
+                    } else if (contentType is QrContentType.Binary) {
+                        Text(
+                            text = stringResource(R.string.binary_content_title),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = stringResource(R.string.binary_content_message),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.decoded_content_label),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        SelectionContainer {
+                            Text(
+                                text = qrText,
+                                style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
+                                textAlign = TextAlign.Start
+                            )
+                        }
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Button(
-                    onClick = {
-                        clipboardManager.setText(AnnotatedString(qrText))
-                        Toast.makeText(context, copiedToast, Toast.LENGTH_SHORT).show()
-                    },
-                    modifier = Modifier.weight(1f).height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+            if (contentType !is QrContentType.Binary) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(Icons.Filled.ContentCopy, contentDescription = copyLabel)
-                    Spacer(Modifier.width(8.dp))
-                    Text(copyLabel)
-                }
+                    Button(
+                        onClick = {
+                            val copyText = if (contentType is QrContentType.BankAccount) {
+                                listOfNotNull(
+                                    contentType.bankName?.takeIf { it.isNotBlank() },
+                                    contentType.accountTitle?.takeIf { it.isNotBlank() },
+                                    contentType.accountNumber?.takeIf { it.isNotBlank() },
+                                    contentType.iban?.takeIf { it.isNotBlank() }
+                                ).joinToString("\n")
+                            } else qrText
+                            clipboardManager.setText(AnnotatedString(copyText))
+                            Toast.makeText(context, copiedToast, Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier.weight(1f).height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                    ) {
+                        Icon(Icons.Filled.ContentCopy, contentDescription = copyLabel)
+                        Spacer(Modifier.width(8.dp))
+                        Text(if (contentType is QrContentType.BankAccount) stringResource(R.string.copy_account_details) else copyLabel)
+                    }
 
-                OutlinedButton(
-                    onClick = {
-                        val intent = Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, qrText)
-                        }
-                        context.startActivity(Intent.createChooser(intent, shareLabel))
-                    },
-                    modifier = Modifier.weight(1f).height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
-                ) {
-                    Icon(Icons.Filled.Share, contentDescription = shareLabel)
-                    Spacer(Modifier.width(8.dp))
-                    Text(shareLabel)
+                    OutlinedButton(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, qrText)
+                            }
+                            context.startActivity(Intent.createChooser(intent, shareLabel))
+                        },
+                        modifier = Modifier.weight(1f).height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(Icons.Filled.Share, contentDescription = shareLabel)
+                        Spacer(Modifier.width(8.dp))
+                        Text(shareLabel)
+                    }
                 }
             }
 
@@ -370,15 +432,25 @@ fun ScanResultScreen(qrText: String) {
                         Text(stringResource(R.string.send_sms))
                     }
                 }
+                is QrContentType.BankAccount -> {}
+                is QrContentType.Binary -> {}
                 is QrContentType.PlainText -> {}
             }
 
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = {
-                    val intent = Intent(context, ScanActivity::class.java)
-                    context.startActivity(intent)
-                    if (context is ComponentActivity) context.finish()
+                    val goToScan = {
+                        val intent = Intent(context, ScanActivity::class.java)
+                        context.startActivity(intent)
+                        if (context is ComponentActivity) context.finish()
+                    }
+                    val activity = context as? android.app.Activity
+                    if (activity != null) {
+                        AdsManager.maybeShowInterstitial(activity) { goToScan() }
+                    } else {
+                        goToScan()
+                    }
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),

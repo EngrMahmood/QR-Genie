@@ -7,20 +7,45 @@ sealed class QrContentType {
     data class Email(val address: String, val subject: String?, val body: String?) : QrContentType()
     data class Phone(val number: String) : QrContentType()
     data class Sms(val number: String, val body: String?) : QrContentType()
+    data class BankAccount(
+        val bankName: String?,
+        val accountTitle: String?,
+        val accountNumber: String?,
+        val iban: String?
+    ) : QrContentType()
+    data class Binary(val text: String) : QrContentType()
     data class PlainText(val text: String) : QrContentType()
 }
 
 object QrContentParser {
 
     fun parse(raw: String): QrContentType {
+        if (isLikelyBinary(raw)) return QrContentType.Binary(raw)
         val trimmed = raw.trim()
         return parseWifi(trimmed)
+            ?: parseBankAccount(trimmed)
             ?: parseVCard(trimmed)
             ?: parseMailto(trimmed)
             ?: parseTel(trimmed)
             ?: parseSms(trimmed)
             ?: parseUrl(trimmed)
             ?: QrContentType.PlainText(raw)
+    }
+
+    // ML Kit/ZXing decode text using UTF-8; if the underlying bytes weren't valid UTF-8 (e.g. a
+    // proprietary/binary payload), a large fraction of the string comes back as U+FFFD replacement
+    // characters or raw control bytes. Showing that dump to the user is just noise, so treat it as
+    // "binary" content instead of trying to render it as text.
+    private fun isLikelyBinary(s: String): Boolean {
+        if (s.isEmpty()) return false
+        var suspicious = 0
+        for (ch in s) {
+            val code = ch.code
+            if (ch == '�' || (code < 0x09) || (code in 0x0B..0x1F && code != 0x0A && code != 0x0D)) {
+                suspicious++
+            }
+        }
+        return suspicious.toDouble() / s.length > 0.08
     }
 
     private fun field(source: String, key: String): String? {
@@ -35,6 +60,16 @@ object QrContentParser {
         val password = field(source, "P")
         val encryption = field(source, "T") ?: "WPA"
         return QrContentType.Wifi(ssid, password, encryption)
+    }
+
+    private fun parseBankAccount(source: String): QrContentType.BankAccount? {
+        if (!source.startsWith("BANKACCT:", ignoreCase = true)) return null
+        val bank = field(source, "B")
+        val title = field(source, "N")
+        val account = field(source, "A")
+        val iban = field(source, "I")
+        if (bank == null && title == null && account == null && iban == null) return null
+        return QrContentType.BankAccount(bank, title, account, iban)
     }
 
     private fun parseVCard(source: String): QrContentType.Contact? {

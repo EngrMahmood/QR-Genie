@@ -16,38 +16,15 @@ android {
         // Bump versionCode when publishing new bundles and update versionName accordingly.
         // Increment versionCode and versionName for Play Store update
         // Bump when publishing new bundles and update versionName accordingly.
-        versionCode = 10 // bumped for Play release
-        versionName = "1.0.8"
+        versionCode = 11 // bumped for Play release
+        versionName = "1.0.9"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    buildTypes {
-        release {
-            // Only attach a signing config if a keystore actually exists (either via
-            // KEYSTORE_FILE env var or the default keystore.jks in project root).
-            // This lets us build an unsigned bundle locally when the keystore is not
-            // present (useful for diagnostics and CI-free checks). The signing config
-            // itself is created/configured later in this file when possible.
-            val envKs = System.getenv("KEYSTORE_FILE")
-            val ksExists = (envKs != null && file(envKs).exists()) || rootProject.file("keystore.jks").exists()
-            if (ksExists) {
-                signingConfig = signingConfigs.findByName("release")
-            }
-            // Populate signing properties from environment variables if present (used by CI)
-            // These will be read by the signing config created above.
-            // Note: CI will write the keystore file and set KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD env vars.
-            // We configure the signingConfig below in the 'signingConfigs' block.
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
-
-    // Signing config: if environment variables are set (CI), use them; otherwise the build will continue unsigned.
-    // Avoid creating the 'release' SigningConfig twice (some environments/plugins may pre-create it).
+    // Signing config: if environment variables are set (CI), use them; otherwise fall back to
+    // a keystore.jks file in the project root. Must be created BEFORE buildTypes below, since
+    // buildTypes.release looks it up by name — creating it later would leave that lookup null.
     val ksPath = System.getenv("KEYSTORE_FILE") ?: rootProject.file("keystore.jks").path
     val ksPassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
     val ksAlias = System.getenv("KEY_ALIAS") ?: ""
@@ -67,6 +44,26 @@ android {
         existingReleaseConfig.storePassword = ksPassword
         existingReleaseConfig.keyAlias = ksAlias
         existingReleaseConfig.keyPassword = ksKeyPassword
+    }
+
+    buildTypes {
+        release {
+            // Only attach a signing config if a keystore actually exists (either via
+            // KEYSTORE_FILE env var or the default keystore.jks in project root).
+            // This lets us build an unsigned bundle locally when the keystore is not
+            // present (useful for diagnostics and CI-free checks).
+            val envKs = System.getenv("KEYSTORE_FILE")
+            val ksExists = (envKs != null && file(envKs).exists()) || rootProject.file("keystore.jks").exists()
+            if (ksExists) {
+                signingConfig = signingConfigs.findByName("release")
+            }
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
     }
 
     compileOptions {
@@ -164,6 +161,13 @@ dependencies {
 
     // Firebase Cloud Messaging (optional - requires google-services.json and Firebase setup)
     implementation("com.google.firebase:firebase-messaging:23.2.0")
+
+    // AdMob (banner + interstitial) and UMP for GDPR/consent
+    implementation("com.google.android.gms:play-services-ads:23.6.0")
+    implementation("com.google.android.ump:user-messaging-platform:3.1.0")
+
+    // In-app review prompt
+    implementation("com.google.android.play:review-ktx:2.0.2")
     }
 
 // Prepare native assets (copy offending .so from Gradle cache into app assets) before build

@@ -9,6 +9,7 @@ data class ScanHistoryItem(
     val content: String,
     val timestamp: Long = System.currentTimeMillis(),
     /** "scanned" or "generated" */
-    val source: String = "scanned"
+    val source: String = "scanned",
+    val isFavorite: Boolean = false
 )
 

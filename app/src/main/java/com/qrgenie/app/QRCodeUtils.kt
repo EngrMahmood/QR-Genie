@@ -317,6 +317,45 @@ object QRCodeUtils {
     }
 
     /**
+     * Used by GenerateActivity's "Save to Gallery" button. Uses MediaStore (scoped storage) on
+     * API 29+; on older API levels writes directly to the public Pictures directory since the
+     * caller has already ensured WRITE_EXTERNAL_STORAGE is granted before invoking this.
+     */
+    fun saveBitmapToGallery(context: Context, bitmap: Bitmap): Boolean {
+        return try {
+            val filename = "QRGenie_${System.currentTimeMillis()}.png"
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                val values = android.content.ContentValues().apply {
+                    put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, filename)
+                    put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/png")
+                    put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, "Pictures/QR Genie")
+                }
+                val uri = context.contentResolver.insert(
+                    android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    values
+                ) ?: return false
+                context.contentResolver.openOutputStream(uri)?.use { out ->
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                } ?: return false
+                true
+            } else {
+                @Suppress("DEPRECATION")
+                val picturesDir = android.os.Environment.getExternalStoragePublicDirectory(
+                    android.os.Environment.DIRECTORY_PICTURES
+                )
+                val qrDir = File(picturesDir, "QR Genie").apply { mkdirs() }
+                val file = File(qrDir, filename)
+                FileOutputStream(file).use { out -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, out) }
+                android.media.MediaScannerConnection.scanFile(context, arrayOf(file.absolutePath), null, null)
+                true
+            }
+        } catch (e: Exception) {
+            Log.d(TAG, "saveBitmapToGallery failed: ${e.message}")
+            false
+        }
+    }
+
+    /**
      * Used by GenerateActivity for Sharing
      */
     fun saveBitmapToCacheAndGetUri(context: Context, bitmap: Bitmap): Uri? {

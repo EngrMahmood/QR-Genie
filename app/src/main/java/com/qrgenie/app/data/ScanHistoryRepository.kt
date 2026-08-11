@@ -10,6 +10,7 @@ object ScanHistoryRepository {
     suspend fun delete(context: Context, item: ScanHistoryItem) = HistoryStorage.delete(context, item)
     suspend fun clearAll(context: Context) = HistoryStorage.clear(context)
     suspend fun restore(context: Context, items: List<ScanHistoryItem>) = HistoryStorage.replace(context, items)
+    suspend fun toggleFavorite(context: Context, item: ScanHistoryItem) = HistoryStorage.toggleFavorite(context, item)
     fun stateFlow() = HistoryStorage.state
 }
 
